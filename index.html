@@ -346,6 +346,46 @@
           <button data-val="spender">Treat-yourself spender</button>
         </div>
       </div>
+
+      <div class="field full">
+        <label>The check lands on a first date. You…</label>
+        <div class="seg" id="q_check">
+          <button data-val="grab">Grab it 😎</button>
+          <button data-val="split" class="active">Offer, then split</button>
+          <button data-val="fake">Do the slow-motion wallet reach</button>
+          <button data-val="expect">Let them get it</button>
+        </div>
+      </div>
+
+      <div class="field full">
+        <label>Your camera roll is 90%…</label>
+        <div class="seg" id="q_camera">
+          <button data-val="pet">My pet 🐾</button>
+          <button data-val="food" class="active">Food I'll never cook again</button>
+          <button data-val="selfies">Selfies (no notes)</button>
+          <button data-val="memes">Unhinged memes</button>
+        </div>
+      </div>
+
+      <div class="field full">
+        <label>It's midnight. You're on…</label>
+        <div class="seg" id="q_night">
+          <button data-val="duo">Duolingo (streak: 400 🔥)</button>
+          <button data-val="gymapp" class="active">Planning tomorrow's gym</button>
+          <button data-val="scroll">The doomscroll</button>
+          <button data-val="ex">…your ex's profile 👀</button>
+        </div>
+      </div>
+
+      <div class="field full">
+        <label>Be honest — your biggest red flag?</label>
+        <div class="seg" id="q_redflag">
+          <button data-val="work">"Married to my work"</button>
+          <button data-val="texter" class="active">Chronically bad texter</button>
+          <button data-val="exfriend">Still besties with my ex</button>
+          <button data-val="none">I have zero red flags 😇</button>
+        </div>
+      </div>
     </div>
 
     <button class="cta" id="calc">Calculate my percentile →</button>
@@ -568,7 +608,12 @@ function marketAdjustCS(f, incomeSub, eduSub){
     else    { db+=base.mu_0j[t]/CS.f_nat[t]; dc+=city.mu_0j[t]/cityData.f[t]; } }
   const baseRate=db/NS, cityRate=dc/NS;
   const shift=clamp(-CS.K*(cityRate-baseRate), -MODEL.marketMaxShift, MODEL.marketMaxShift);
-  return { model:'choosiow', shift, band, sbin, baseRate, cityRate };
+  // local single population in the user's age band (equilibrium unmarried counts)
+  let sm=0, sw=0;
+  for(let s=0;s<NS;s++){ const t=band*NS+s; sm+=city.mu_i0[t]; sw+=city.mu_0j[t]; }
+  const localRatio = sw>0 ? 100*sm/sw : 100;   // single men per 100 single women in the band
+  const bandLabel = CS.age_bands[band][0]+'–'+CS.age_bands[band][1];
+  return { model:'choosiow', shift, band, sbin, baseRate, cityRate, localRatio, bandLabel };
 }
 
 const TIERS = [
@@ -591,8 +636,12 @@ const LIFESTYLE = {
   q_date:    { cook:70, restaurant:60, activity:78, drink:50 },
   q_weekend: { gym:72, travel:76, brunch:64, netflix:44 },
   q_money:   { saver:62, balanced:74, spender:48 },
+  q_check:   { grab:64, split:74, fake:42, expect:50 },
+  q_camera:  { pet:68, food:60, selfies:52, memes:66 },
+  q_night:   { duo:66, gymapp:70, scroll:50, ex:36 },
+  q_redflag: { work:58, texter:46, exfriend:52, none:44 }, // "no red flags" is, itself, a red flag
 };
-const LIFE_QS = ['q_pets','q_friday','q_reply','q_date','q_weekend','q_money'];
+const LIFE_QS = ['q_pets','q_friday','q_reply','q_date','q_weekend','q_money','q_check','q_camera','q_night','q_redflag'];
 function readLifestyle(){
   const life = {};
   LIFE_QS.forEach(q=>{ const el=document.querySelector('#'+q+' .active'); life[q]= el ? el.dataset.val : null; });
@@ -608,10 +657,13 @@ function buildPersona(life){
   const FRI = {group:'life-of-the-party', friends:'down-to-earth', cozy:'low-key', adventure:'adventurous'};
   const WKND= {gym:'gym-devoted', travel:'jet-setting', brunch:'social', netflix:'homebody'};
   const PET = {dog:'dog person', cat:'cat person', both:'animal lover', none:'pet-free spirit'};
+  const FLAG = {work:'married to the job', texter:'a menace over text', exfriend:'still besties with the ex', none:'"zero red flags" 😇'};
   const fri = FRI[life.q_friday] || 'easygoing';
   const wknd= WKND[life.q_weekend] || 'balanced';
   const pet = PET[life.q_pets] || 'free agent';
-  return `${fri.charAt(0).toUpperCase()+fri.slice(1)}, ${wknd} ${pet}`;
+  const flag = FLAG[life.q_redflag];
+  const base = `${fri.charAt(0).toUpperCase()+fri.slice(1)}, ${wknd} ${pet}`;
+  return flag ? `${base} 🚩 ${flag}` : base;
 }
 
 /* ---------- helpers ---------- */
@@ -806,16 +858,29 @@ function run(){
 
   const mn = document.getElementById('market-note');
   const city = shortCity(f.cityName);
+  const sh = Math.round(r.shift);
+  const tilt = (s)=> s>=1.5 ? 'That imbalance quietly tilts things your way. 😌'
+                   : s<=-1.5 ? 'Translation: a bit more competition on your side — bring your A-game. 💪'
+                   : 'Pretty balanced for you, honestly.';
   if (r.market && r.market.model==='choosiow'){
-    const bp=Math.round(r.market.baseRate*100), cp=Math.round(r.market.cityRate*100), sh=Math.round(r.shift);
-    const dir = r.shift>=0 ? 'friendlier' : 'tougher';
-    mn.innerHTML = '📍 <b>Choo–Siow market model</b> (estimated on real ' + city + ' census data): re-solving the marriage-market equilibrium for your city, people of your age &amp; gender are predicted single <b>' + cp + '%</b> of the time there vs <b>' + bp + '%</b> nationally — a ' + dir + ' market for you, <b>' + (sh>=0?'+':'') + sh + '</b> pts.';
-  } else if (Math.abs(r.shift) < 0.6){
-    mn.textContent = '📍 Your city applies no notable market adjustment.';
-  } else if (r.shift>0){
-    mn.innerHTML = '📍 Your gender is <b>scarcer</b> than the people you\'re after in ' + city + ' — that market advantage bumped you up <b>+' + Math.round(r.shift) + '</b> points.';
+    const bp=Math.round(r.market.baseRate*100), cp=Math.round(r.market.cityRate*100);
+    const lr = Math.round(r.market.localRatio);
+    const detail = sh===0
+      ? 'Choo–Siow equilibrium: right on par with the national average (' + cp + '% single here vs ' + bp + '%), so no net adjustment.'
+      : 'Choo–Siow equilibrium: people of your age &amp; gender are predicted <b>' + cp + '% single</b> here vs ' + bp + '% nationally — a ' + (sh>0?'friendlier':'tougher') + ' market for you, <b>' + (sh>0?'+':'') + sh + '</b> pts.';
+    mn.innerHTML = '📍 <b>Your local scene</b> — among ' + r.market.bandLabel + '-year-old singles in ' + city +
+      ', there are about <b>' + lr + ' single men per 100 single women</b> <span style="opacity:.7">(real census data)</span>. ' + tilt(r.shift) +
+      '<br><span style="opacity:.8;font-size:.94em">' + detail + '</span>';
   } else {
-    mn.innerHTML = '📍 You\'re in a <b>crowded</b> market in ' + city + ' — more competition on your side pulled you down <b>' + Math.round(r.shift) + '</b> points.';
+    // sex-ratio model (international / same-sex / "everyone")
+    const lr = Math.round(r.ratio);
+    const comp = Math.abs(lr-100)<2 ? 'a fairly even split (~' + lr + ' single men per 100 single women)'
+                                    : 'about <b>' + lr + ' single men per 100 single women</b> <span style="opacity:.7">(estimate)</span>';
+    let effect;
+    if (Math.abs(r.shift) < 0.6) effect = 'No notable tilt for you here.';
+    else if (r.shift>0) effect = 'Your gender is the <b>scarcer</b> side — worth <b>+' + sh + '</b> pts to you.';
+    else effect = 'It\'s a <b>crowded</b> field on your side — <b>' + sh + '</b> pts.';
+    mn.innerHTML = '📍 <b>Your local scene</b> — in ' + city + ', ' + comp + '. ' + effect;
   }
 
   const res = document.getElementById('results');
