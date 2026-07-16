@@ -1,0 +1,18 @@
+# Copyrighted source paper (JSTOR) — do NOT redistribute publicly
+Choo-Marries-2006.pdf
+
+# Superseded first-pass (SES-decile) estimation, replaced by the age×SES build
+gains_us.json
+build_gains.py
+integrate2.py
+
+# OS / editor cruft
+.DS_Store
+*.swp
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Local deploy helper (machine-specific paths)
+deploy.sh

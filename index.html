@@ -1,0 +1,993 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Market Value — Dating Market Percentile</title>
+<style>
+  :root {
+    --bg: #0f1020;
+    --bg2: #16172e;
+    --card: #1c1e3a;
+    --card2: #23264a;
+    --line: #2f3358;
+    --text: #eef0ff;
+    --muted: #a3a8cf;
+    --accent: #ff5c8a;
+    --accent2: #7c5cff;
+    --good: #35d0a5;
+    --bad: #ff6b6b;
+    --shadow: 0 20px 60px rgba(0,0,0,0.45);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, sans-serif;
+    background: radial-gradient(1200px 700px at 80% -10%, #2a1a44 0%, transparent 55%),
+                radial-gradient(1000px 600px at -10% 10%, #1a2a4a 0%, transparent 50%),
+                var(--bg);
+    color: var(--text);
+    line-height: 1.5;
+    min-height: 100vh;
+  }
+  .wrap { max-width: 960px; margin: 0 auto; padding: 40px 20px 80px; }
+  header { text-align: center; margin-bottom: 8px; }
+  .badge {
+    display: inline-block; font-size: 12px; letter-spacing: 2px; text-transform: uppercase;
+    color: var(--muted); border: 1px solid var(--line); border-radius: 999px; padding: 5px 14px; margin-bottom: 18px;
+  }
+  h1 {
+    font-size: clamp(30px, 6vw, 52px); margin: 0 0 10px; line-height: 1.05; font-weight: 800;
+    background: linear-gradient(90deg, #fff 0%, var(--accent) 60%, var(--accent2) 100%);
+    -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .subtitle { color: var(--muted); font-size: 17px; max-width: 620px; margin: 0 auto 8px; }
+  .disclaimer { color: #7f84ad; font-size: 13px; max-width: 640px; margin: 14px auto 0; }
+
+  .card {
+    background: linear-gradient(180deg, var(--card) 0%, var(--bg2) 100%);
+    border: 1px solid var(--line); border-radius: 20px; padding: 26px; box-shadow: var(--shadow);
+    margin-top: 26px;
+  }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px 22px; }
+  @media (max-width: 640px){ .grid { grid-template-columns: 1fr; } }
+  .field { display: flex; flex-direction: column; gap: 7px; }
+  .field.full { grid-column: 1 / -1; }
+  label { font-size: 13px; color: var(--muted); font-weight: 600; letter-spacing: .3px; }
+  .hint { font-size: 12px; color: #7f84ad; font-weight: 400; }
+  select, input[type="number"], input[type="text"] {
+    background: #14152b; border: 1px solid var(--line); color: var(--text);
+    border-radius: 12px; padding: 12px 14px; font-size: 15px; outline: none; width: 100%;
+    transition: border-color .15s, box-shadow .15s;
+  }
+  select:focus, input:focus { border-color: var(--accent2); box-shadow: 0 0 0 3px rgba(124,92,255,.2); }
+
+  .seg { display: flex; gap: 8px; flex-wrap: wrap; }
+  .seg button {
+    flex: 1; min-width: 80px; background: #14152b; border: 1px solid var(--line); color: var(--muted);
+    padding: 11px 10px; border-radius: 12px; cursor: pointer; font-size: 14px; font-weight: 600;
+    transition: all .15s;
+  }
+  .seg button.active {
+    color: #fff; border-color: transparent;
+    background: linear-gradient(90deg, var(--accent2), var(--accent));
+    box-shadow: 0 6px 18px rgba(124,92,255,.35);
+  }
+
+  .slider-row { display: flex; align-items: center; gap: 14px; }
+  input[type="range"] { -webkit-appearance: none; appearance: none; height: 6px; border-radius: 999px;
+    background: linear-gradient(90deg, var(--accent2), var(--accent)); flex: 1; outline: none; }
+  input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%;
+    background: #fff; border: 3px solid var(--accent); cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,.4); }
+  .slider-val { min-width: 42px; text-align: right; font-variant-numeric: tabular-nums; font-weight: 700; color: var(--text); }
+
+  .section-title { font-size: 13px; text-transform: uppercase; letter-spacing: 2px; color: var(--accent);
+    margin: 28px 0 4px; font-weight: 700; grid-column: 1 / -1; }
+
+  .cta {
+    display: block; width: 100%; margin-top: 28px; padding: 17px; font-size: 18px; font-weight: 800;
+    color: #fff; border: none; border-radius: 14px; cursor: pointer; letter-spacing: .5px;
+    background: linear-gradient(90deg, var(--accent2), var(--accent));
+    box-shadow: 0 12px 30px rgba(255,92,138,.35); transition: transform .1s, box-shadow .2s;
+  }
+  .cta:hover { transform: translateY(-2px); box-shadow: 0 16px 40px rgba(255,92,138,.45); }
+  .cta:active { transform: translateY(0); }
+
+  /* Results */
+  #results { display: none; }
+  #results.show { display: block; animation: rise .5s ease; }
+  @keyframes rise { from { opacity: 0; transform: translateY(20px);} to {opacity:1; transform:none;} }
+  .score-hero { text-align: center; padding: 6px 0 4px; }
+  .tier { font-size: 14px; letter-spacing: 3px; text-transform: uppercase; color: var(--accent); font-weight: 700; }
+  .big-pct { font-size: clamp(56px, 15vw, 110px); font-weight: 900; line-height: 1;
+    background: linear-gradient(90deg, var(--accent) 0%, var(--accent2) 100%);
+    -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+  .pct-label { color: var(--muted); font-size: 17px; margin-top: 2px; }
+  .tier-desc { color: var(--text); font-size: 16px; max-width: 520px; margin: 14px auto 0; }
+  .persona { color: var(--muted); font-size: 14.5px; margin: 12px auto 0; max-width: 520px; }
+  .persona b { color: #c9c4ff; }
+
+  .curve-wrap { margin: 24px 0 8px; }
+  .breakdown { margin-top: 18px; display: flex; flex-direction: column; gap: 12px; }
+  .bar-row { display: grid; grid-template-columns: 130px 1fr 48px; align-items: center; gap: 12px; }
+  .bar-label { font-size: 13px; color: var(--muted); font-weight: 600; }
+  .bar-track { height: 12px; background: #14152b; border-radius: 999px; overflow: hidden; position: relative; }
+  .bar-track .mid { position: absolute; left: 50%; top: -3px; bottom: -3px; width: 1px; background: #454a78; }
+  .bar-fill { height: 100%; border-radius: 999px; transition: width .6s ease; }
+  .bar-val { font-size: 13px; font-weight: 700; text-align: right; font-variant-numeric: tabular-nums; }
+
+  details { margin-top: 24px; border-top: 1px solid var(--line); padding-top: 16px; }
+  summary { cursor: pointer; color: var(--muted); font-weight: 600; font-size: 14px; }
+  details p, details li { color: #8f94bd; font-size: 13.5px; }
+  .foot { text-align: center; color: #6a6f96; font-size: 12.5px; margin-top: 34px; }
+  .pill-note { background: rgba(124,92,255,.1); border: 1px solid rgba(124,92,255,.3); color: #c9c4ff;
+    border-radius: 12px; padding: 10px 14px; font-size: 13px; margin-top: 16px; }
+  .share-row { display:flex; gap:10px; margin-top: 20px; flex-wrap: wrap; }
+  .share-row button { flex:1; min-width: 140px; background:#14152b; border:1px solid var(--line); color:var(--text);
+    padding: 12px; border-radius: 12px; cursor:pointer; font-weight:600; font-size:14px; }
+  .share-row button:hover { border-color: var(--accent2); }
+
+  .levers { margin-top:18px; background:rgba(53,208,165,.08); border:1px solid rgba(53,208,165,.28); border-radius:14px; padding:14px 16px; }
+  .levers h4 { margin:0 0 8px; font-size:12px; text-transform:uppercase; letter-spacing:1.5px; color:var(--good); }
+  .lever { display:flex; align-items:baseline; gap:9px; font-size:14.5px; color:var(--text); margin:7px 0; }
+  .lever .g { color:var(--good); font-weight:800; font-variant-numeric:tabular-nums; white-space:nowrap; }
+  .lever b { color:#fff; }
+
+  .compare { margin-top:20px; display:none; }
+  .compare.show { display:block; animation: rise .35s ease; }
+  .compare-cols { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  .cmp-card { background:#14152b; border:1px solid var(--line); border-radius:14px; padding:14px 15px; }
+  .cmp-card.placeholder { display:flex; align-items:center; justify-content:center; text-align:center; color:#6a6f96; font-size:13px; border-style:dashed; }
+  .cmp-card h5 { margin:0 0 3px; font-size:12.5px; color:var(--muted); font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .cmp-pct { font-size:30px; font-weight:900; line-height:1.1; margin-bottom:8px;
+    background:linear-gradient(90deg,var(--accent),var(--accent2)); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; }
+  .cmp-row { display:grid; grid-template-columns:64px 1fr 24px; gap:7px; align-items:center; font-size:11px; color:var(--muted); margin-top:4px; }
+  .cmp-row .t { height:7px; background:#0e0f22; border-radius:99px; overflow:hidden; }
+  .cmp-row .t > div { height:100%; border-radius:99px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="badge">Just for fun · v0.1</div>
+    <h1>What's your dating<br>market percentile?</h1>
+    <p class="subtitle">Answer a few questions and find out where you rank among singles competing for attention in your city.</p>
+    <p class="disclaimer">⚠️ This is an entertainment toy. The weights are drawn from population-average research on dating preferences — they say nothing about your worth as a person, and real attraction is gloriously unpredictable.</p>
+  </header>
+
+  <!-- FORM -->
+  <div class="card" id="form-card">
+    <div class="grid">
+      <div class="section-title">About you</div>
+
+      <div class="field">
+        <label>I am a…</label>
+        <div class="seg" id="gender">
+          <button data-val="male" class="active">Man</button>
+          <button data-val="female">Woman</button>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>I'm looking to attract…</label>
+        <div class="seg" id="target">
+          <button data-val="women" class="active">Women</button>
+          <button data-val="men">Men</button>
+          <button data-val="everyone">Everyone</button>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Age <span class="hint">(18–70)</span></label>
+        <div class="slider-row">
+          <input type="range" id="age" min="18" max="70" value="29" />
+          <span class="slider-val" id="age-val">29</span>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>City <span class="hint">(sets your local market)</span></label>
+        <select id="city"></select>
+      </div>
+
+      <div class="section-title">Status & career</div>
+
+      <div class="field">
+        <label>Annual income (USD)</label>
+        <select id="income">
+          <option value="15000">Under $25k</option>
+          <option value="32000">$25k – $40k</option>
+          <option value="50000" selected>$40k – $60k</option>
+          <option value="70000">$60k – $85k</option>
+          <option value="95000">$85k – $110k</option>
+          <option value="135000">$110k – $160k</option>
+          <option value="200000">$160k – $250k</option>
+          <option value="350000">$250k – $500k</option>
+          <option value="750000">$500k+</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Education</label>
+        <select id="education">
+          <option value="none">No high school diploma</option>
+          <option value="highschool">High school</option>
+          <option value="some">Some college</option>
+          <option value="associate">Associate degree</option>
+          <option value="bachelor" selected>Bachelor's degree</option>
+          <option value="master">Master's degree</option>
+          <option value="professional">Doctorate / MD / JD</option>
+        </select>
+      </div>
+
+      <div class="field full">
+        <label>Occupation field <span class="hint">(prestige, not just pay)</span></label>
+        <select id="occupation">
+          <option value="90">Medicine (doctor, surgeon)</option>
+          <option value="84">Law / Finance (lawyer, banker, PE)</option>
+          <option value="82">Executive / Founder (CEO, VP)</option>
+          <option value="76">Engineering / Architecture</option>
+          <option value="75">Healthcare (nurse, PT, pharmacist)</option>
+          <option value="74">Science / Academia (researcher, professor)</option>
+          <option value="72">Tech (software, data, product)</option>
+          <option value="66">Business / Management</option>
+          <option value="62">Education (teacher, professor)</option>
+          <option value="58" selected>Creative / Media (design, arts, PR)</option>
+          <option value="55">Skilled trade (electrician, contractor)</option>
+          <option value="52">Sales / Real estate</option>
+          <option value="48">Clerical / Admin / Support</option>
+          <option value="42">Service / Retail / Hospitality</option>
+          <option value="40">Student</option>
+          <option value="30">Between jobs</option>
+        </select>
+      </div>
+
+      <div class="section-title">Physical</div>
+
+      <div class="field">
+        <label>Height</label>
+        <div class="slider-row">
+          <input type="range" id="height" min="145" max="205" value="175" />
+          <span class="slider-val" id="height-val">175 cm</span>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Self-rated looks <span class="hint">(1 = rough day, 10 = model)</span></label>
+        <div class="slider-row">
+          <input type="range" id="looks" min="1" max="10" value="6" />
+          <span class="slider-val" id="looks-val">6</span>
+        </div>
+      </div>
+
+      <div class="section-title">Personality</div>
+
+      <div class="field">
+        <label>Warmth / kindness</label>
+        <div class="slider-row"><input type="range" class="pers" id="p_warmth" min="0" max="100" value="60" /><span class="slider-val" id="p_warmth-val">60</span></div>
+      </div>
+      <div class="field">
+        <label>Humor</label>
+        <div class="slider-row"><input type="range" class="pers" id="p_humor" min="0" max="100" value="60" /><span class="slider-val" id="p_humor-val">60</span></div>
+      </div>
+      <div class="field">
+        <label>Ambition / drive</label>
+        <div class="slider-row"><input type="range" class="pers" id="p_ambition" min="0" max="100" value="60" /><span class="slider-val" id="p_ambition-val">60</span></div>
+      </div>
+      <div class="field">
+        <label>Confidence</label>
+        <div class="slider-row"><input type="range" class="pers" id="p_confidence" min="0" max="100" value="55" /><span class="slider-val" id="p_confidence-val">55</span></div>
+      </div>
+      <div class="field">
+        <label>Extraversion / social energy</label>
+        <div class="slider-row"><input type="range" class="pers" id="p_extraversion" min="0" max="100" value="55" /><span class="slider-val" id="p_extraversion-val">55</span></div>
+      </div>
+      <div class="field">
+        <label>Emotional stability</label>
+        <div class="slider-row"><input type="range" class="pers" id="p_stability" min="0" max="100" value="60" /><span class="slider-val" id="p_stability-val">60</span></div>
+      </div>
+
+      <div class="section-title">Lifestyle &amp; vibe</div>
+
+      <div class="field full">
+        <label>Pets?</label>
+        <div class="seg" id="q_pets">
+          <button data-val="dog">🐕 Dog person</button>
+          <button data-val="cat">🐈 Cat person</button>
+          <button data-val="both" class="active">Both, obviously</button>
+          <button data-val="none">Not a pet person</button>
+        </div>
+      </div>
+
+      <div class="field full">
+        <label>Ideal Friday night?</label>
+        <div class="seg" id="q_friday">
+          <button data-val="group">Out with a big group</button>
+          <button data-val="friends" class="active">A few close friends</button>
+          <button data-val="cozy">Cozy night in</button>
+          <button data-val="adventure">Something spontaneous</button>
+        </div>
+      </div>
+
+      <div class="field full">
+        <label>How fast do you reply to texts?</label>
+        <div class="seg" id="q_reply">
+          <button data-val="instant">Instantly 📲</button>
+          <button data-val="hours" class="active">Within a few hours</button>
+          <button data-val="later">"Sorry, just saw this" 😅</button>
+        </div>
+      </div>
+
+      <div class="field full">
+        <label>Your move for a first date?</label>
+        <div class="seg" id="q_date">
+          <button data-val="cook">Cook them dinner</button>
+          <button data-val="restaurant" class="active">A buzzy new restaurant</button>
+          <button data-val="activity">An activity (climbing, museum…)</button>
+          <button data-val="drink">Casual drinks</button>
+        </div>
+      </div>
+
+      <div class="field full">
+        <label>Weekends are for…</label>
+        <div class="seg" id="q_weekend">
+          <button data-val="gym">The gym 💪</button>
+          <button data-val="travel">Getting out of town ✈️</button>
+          <button data-val="brunch" class="active">Brunch &amp; friends</button>
+          <button data-val="netflix">Recharging at home</button>
+        </div>
+      </div>
+
+      <div class="field full">
+        <label>Money style?</label>
+        <div class="seg" id="q_money">
+          <button data-val="saver">Diligent saver</button>
+          <button data-val="balanced" class="active">Balanced</button>
+          <button data-val="spender">Treat-yourself spender</button>
+        </div>
+      </div>
+    </div>
+
+    <button class="cta" id="calc">Calculate my percentile →</button>
+  </div>
+
+  <!-- RESULTS -->
+  <div class="card" id="results">
+    <div class="score-hero">
+      <div class="tier" id="tier">—</div>
+      <div class="big-pct" id="pct">—</div>
+      <div class="pct-label" id="pct-label">percentile in your local market</div>
+      <div class="tier-desc" id="tier-desc"></div>
+      <div class="persona" id="persona"></div>
+    </div>
+
+    <div class="curve-wrap">
+      <svg id="curve" viewBox="0 0 700 200" width="100%" preserveAspectRatio="xMidYMid meet"></svg>
+    </div>
+
+    <div class="breakdown" id="breakdown"></div>
+
+    <div class="levers" id="levers" style="display:none"></div>
+
+    <div class="pill-note" id="market-note"></div>
+
+    <div class="share-row">
+      <button id="recalc">↺ Adjust answers</button>
+      <button id="pin">📌 Pin to compare</button>
+      <button id="copy">⧉ Copy result</button>
+      <button id="saveimg">🖼 Save image</button>
+    </div>
+
+    <div class="compare" id="compare">
+      <div class="section-title" style="margin-top:10px">Head-to-head</div>
+      <div class="compare-cols" id="compare-cols"></div>
+      <button id="clear-compare" style="margin-top:12px;background:none;border:none;color:#7f84ad;cursor:pointer;font-size:13px;text-decoration:underline">clear comparison</button>
+    </div>
+
+    <details>
+      <summary>How is this calculated? (the honest methodology)</summary>
+      <p>Each attribute is turned into a 0–100 sub-score using reference distributions (e.g. U.S. income percentiles, adult height distributions, occupational-prestige scales). Those sub-scores are combined with weights that reflect <em>average</em> revealed preferences of the gender you're trying to attract — drawn from mate-preference research (online-dating and speed-dating studies, cross-cultural surveys, and large-scale "pursuit curve" analyses).</p>
+      <p>The weighted score is mapped through a normal distribution so that a perfectly average person lands near the 50th percentile, then nudged by a <b>market adjustment</b>. It's a heuristic, not destiny. People are not spreadsheets. 💛</p>
+      <p>For <b>US cities</b>, that market adjustment is not a hand-set rule — it's a <b>Choo &amp; Siow (2006) marriage-matching model estimated on real ACS 2023 microdata</b> (163k married couples). We type people into socioeconomic-desirability deciles (income + education), recover the gains-to-marriage surface from the matching counts, then <em>re-solve the market-clearing equilibrium</em> under your city's sex ratio — so the shift reflects genuine equilibrium spillovers, not a flat penalty. (International cities still use the simpler sex-ratio model.)</p>
+      <p style="font-size:12.5px;color:#787da6;margin-top:12px"><b>Key sources for the weights &amp; curves:</b> Hitsch, Hortaçsu &amp; Ariely (2010), <i>What Makes You Click? Mate Preferences in Online Dating</i> — income/status asymmetry; Bruch &amp; Newman (2018), <i>Science Advances</i> — age-desirability "pursuit" curves; Buss (1989), 37-culture mate-preference study — kindness/ambition ranking; Fisman, Iyengar et al. (2006) speed-dating experiments; U.S. Census/ASEC income &amp; educational-attainment percentiles. <b>Choo &amp; Siow (2006)</b>, <i>Who Marries Whom and Why</i>, JPE — the marriage-market equilibrium used for US cities, estimated on <b>ACS 2023 1-year PUMS</b>. Weights reflect <i>average</i> revealed preferences and are deliberately approximate.</p>
+    </details>
+  </div>
+
+  <div class="foot">Built for laughs. No data leaves your browser — everything runs locally.</div>
+</div>
+
+<script>
+/* =========================================================================
+   SCORING MODEL  —  isolated config, easy to swap for research-backed values.
+   All sub-scores are on a 0..100 "how desirable is this trait" scale.
+   ========================================================================= */
+const MODEL = {
+  // Weights = how much each gender weighs a partner's attribute (sum ~1).
+  // womenPrefs  = weights WOMEN apply (used when target = women)
+  // menPrefs    = weights MEN apply   (used when target = men)
+  weights: {
+    // Research-grounded, revealed-preference leaning. Normalized to sum ~1 within each set.
+    // Sources: Hitsch/Hortacsu/Ariely 2010 (income asymmetry), Bruch & Newman 2018 (age),
+    // Buss 1989 37-culture (personality/status), occupational-prestige & attractiveness literature.
+    // lifestyle = "vibe" factors (pets, social energy, responsiveness…); a modest signal for both.
+    womenPrefs: { attractiveness: 0.235, income: 0.193, height: 0.144, age: 0.138, personality: 0.124, occupation: 0.116, education: 0.050, lifestyle: 0.11 },
+    menPrefs:   { attractiveness: 0.344, age: 0.298, personality: 0.147, occupation: 0.070, income: 0.063, height: 0.042, education: 0.036, lifestyle: 0.11 },
+  },
+
+  // Piecewise anchor points -> linear interpolation between them.
+  // US individual income percentiles (Census/ASEC 2024) -> subscore = income percentile
+  incomePts: [[3000,2],[10300,10],[28000,25],[50200,50],[88700,75],[150000,90],[201000,95],[430000,99],[1000000,99.8]],
+
+  // ~US attainment rarity (91% >=HS, 38% >=bachelor, ~4% professional/doctoral) blended w/ desirability
+  educationMap: { none:6, highschool:24, some:44, associate:55, bachelor:72, master:86, professional:94 },
+
+  // occupation value comes straight from the <select> value (already a prestige score)
+
+  // Desirability-by-age curves (Bruch & Newman 2018, Science Advances). Uses the person's OWN gender.
+  // Women's pursuit peaks early 20s then declines; men's rises to a broad mid-30s–40s plateau.
+  ageCurve: {
+    male:   [[18,44],[22,56],[26,67],[30,76],[34,82],[38,85],[42,85],[46,83],[50,78],[55,70],[60,60],[65,50],[70,42]],
+    female: [[18,96],[20,100],[24,95],[28,85],[32,73],[36,60],[40,49],[45,37],[50,27],[55,20],[60,14],[65,10],[70,7]],
+  },
+
+  heightPts: {
+    male:   [[145,10],[155,18],[163,32],[170,46],[175,58],[178,66],[180,72],[183,80],[185,85],[188,90],[193,95],[205,98]],
+    female: [[145,40],[152,50],[157,56],[160,60],[163,63],[165,64],[168,63],[170,60],[175,54],[180,47],[205,38]],
+  },
+
+  looksPts: [[1,8],[3,25],[5,47],[6,58],[7,68],[8,80],[9,90],[10,97]],
+
+  // sub-weights inside the personality block, by evaluator gender
+  // Buss 37-culture study: kindness/warmth ranks #1 for both sexes; women weight ambition/status more.
+  personalityMix: {
+    womenPrefs: { warmth:0.22, ambition:0.20, confidence:0.18, humor:0.16, stability:0.16, extraversion:0.08 },
+    menPrefs:   { warmth:0.26, humor:0.18, stability:0.18, confidence:0.14, extraversion:0.14, ambition:0.10 },
+  },
+
+  marketMaxShift: 8,   // max +/- percentile points from city sex ratio
+
+  // percentile calibration: raw score of the "median single", and the spread (sd)
+  // tuned so median-input profiles land ~50th and realistic archetypes fan across the range
+  center: 56,
+  spread: 15,
+};
+
+// menPer100Women among the single/dating-age population (approximate). [name, ratio, region]
+const CITIES = [
+  ["Other / not listed (avg)", 100, ""],
+  ["San Jose / Silicon Valley, CA", 118, "United States"],
+  ["San Francisco, CA", 115, "United States"],
+  ["Seattle, WA", 112, "United States"],
+  ["Denver, CO", 110, "United States"],
+  ["Austin, TX", 108, "United States"],
+  ["Portland, OR", 106, "United States"],
+  ["San Diego, CA", 105, "United States"],
+  ["Phoenix, AZ", 103, "United States"],
+  ["Dallas, TX", 102, "United States"],
+  ["Houston, TX", 101, "United States"],
+  ["Los Angeles, CA", 100, "United States"],
+  ["Minneapolis, MN", 99, "United States"],
+  ["Chicago, IL", 96, "United States"],
+  ["Miami, FL", 95, "United States"],
+  ["Boston, MA", 93, "United States"],
+  ["Philadelphia, PA", 92, "United States"],
+  ["New York, NY", 91, "United States"],
+  ["Washington, DC", 89, "United States"],
+  ["Atlanta, GA", 88, "United States"],
+  ["Baltimore, MD", 86, "United States"],
+  ["Memphis, TN", 85, "United States"],
+  ["Toronto, Canada", 95, "Canada & Latin America"],
+  ["Vancouver, Canada", 97, "Canada & Latin America"],
+  ["Montreal, Canada", 96, "Canada & Latin America"],
+  ["Mexico City, Mexico", 94, "Canada & Latin America"],
+  ["São Paulo, Brazil", 95, "Canada & Latin America"],
+  ["Rio de Janeiro, Brazil", 92, "Canada & Latin America"],
+  ["Buenos Aires, Argentina", 94, "Canada & Latin America"],
+  ["Bogotá, Colombia", 93, "Canada & Latin America"],
+  ["London, UK", 97, "Europe"],
+  ["Paris, France", 95, "Europe"],
+  ["Berlin, Germany", 104, "Europe"],
+  ["Amsterdam, Netherlands", 103, "Europe"],
+  ["Dublin, Ireland", 101, "Europe"],
+  ["Madrid, Spain", 98, "Europe"],
+  ["Rome, Italy", 97, "Europe"],
+  ["Stockholm, Sweden", 107, "Europe"],
+  ["Copenhagen, Denmark", 104, "Europe"],
+  ["Warsaw, Poland", 94, "Europe"],
+  ["Moscow, Russia", 87, "Europe"],
+  ["Istanbul, Türkiye", 104, "Europe"],
+  ["Tokyo, Japan", 99, "Asia-Pacific"],
+  ["Seoul, South Korea", 109, "Asia-Pacific"],
+  ["Beijing, China", 107, "Asia-Pacific"],
+  ["Shanghai, China", 105, "Asia-Pacific"],
+  ["Hong Kong", 84, "Asia-Pacific"],
+  ["Singapore", 97, "Asia-Pacific"],
+  ["Bangkok, Thailand", 95, "Asia-Pacific"],
+  ["Manila, Philippines", 96, "Asia-Pacific"],
+  ["Jakarta, Indonesia", 103, "Asia-Pacific"],
+  ["Mumbai, India", 114, "Asia-Pacific"],
+  ["Delhi, India", 118, "Asia-Pacific"],
+  ["Bangalore, India", 120, "Asia-Pacific"],
+  ["Sydney, Australia", 98, "Asia-Pacific"],
+  ["Melbourne, Australia", 99, "Asia-Pacific"],
+  ["Auckland, New Zealand", 97, "Asia-Pacific"],
+  ["Dubai, UAE", 135, "Middle East & Africa"],
+  ["Tel Aviv, Israel", 99, "Middle East & Africa"],
+  ["Cairo, Egypt", 105, "Middle East & Africa"],
+  ["Lagos, Nigeria", 101, "Middle East & Africa"],
+  ["Nairobi, Kenya", 102, "Middle East & Africa"],
+  ["Johannesburg, South Africa", 98, "Middle East & Africa"],
+  ["International / elsewhere", 100, ""],
+];
+
+/* =========================================================================
+   CHOO & SIOW (2006) MARKET ENGINE  —  estimated on real ACS 2023 PUMS data
+   (16 states, 306k married couples, PWGTP-weighted).
+   TYPES = age-band x SES-tercile (18 types) -> age- AND SES-assortative matching
+   are both endogenous. Each US metro carries its OWN age x SES x sex available-
+   population vector (counties -> PUMAs via the Census crosswalk). We hold the
+   structural gains pi fixed and RE-SOLVE the market-clearing equilibrium under a
+   metro's ACTUAL supply, then read the adjustment at the age-band level (averaged
+   over SES to remove per-cell noise). US opposite-sex only.
+   ========================================================================= */
+const CS = Object.assign({"nbands":6,"nses":3,"ntypes":18,"age_bands":[[18,25],[26,30],[31,35],[36,42],[43,52],[53,70]],"ses_edges_men":[27.27,59.88],"ses_edges_women":[25.35,49.8],"weights_men":{"income":0.7942386831275721,"education":0.205761316872428},"weights_women":{"income":0.6363636363636364,"education":0.3636363636363636},"pi":[[-4.7876,-4.9925,-5.8848,-6.1459,-6.41,-7.0621,-7.3496,-9.0246,-10.3001,-9.3187,-9.3899,-8.9974,-10.8618,-8.9558,-9.2645,-11.7044,-8.7903,-10.6272],[-3.9041,-3.4332,-4.0069,-5.0143,-4.8186,-5.0588,-6.7328,-6.8131,-7.8394,-7.729,-9.4656,-7.9532,-7.4632,-10.0103,-14.5236,-10.18,-10.0471,-9.4952],[-4.788,-4.0628,-3.5266,-5.3509,-5.2049,-5.1522,-6.8107,-9.7661,-7.6303,-8.6145,-8.4934,-8.4838,-13.5929,-9.3774,-9.4099,-10.0658,-14.0134,-9.6221],[-4.8044,-5.1098,-5.3709,-3.3388,-3.7401,-3.8729,-4.3953,-5.0216,-5.4219,-6.2195,-5.8918,-7.4106,-7.5009,-7.75,-8.4791,-7.912,-8.9934,-10.603],[-4.3733,-3.9311,-4.1019,-2.6076,-2.3774,-2.4638,-3.9168,-3.9114,-4.1603,-6.1296,-5.6932,-6.0161,-6.844,-7.3791,-7.5733,-8.0509,-10.0056,-10.6192],[-5.1077,-4.4121,-3.8269,-2.8427,-2.4452,-1.6594,-4.4106,-3.9633,-3.3708,-7.2775,-5.9647,-5.3757,-9.9337,-7.0727,-9.2989,-10.3661,-9.957,-10.2479],[-5.8056,-6.3017,-7.0277,-3.5475,-3.9101,-4.4878,-2.7739,-3.0844,-3.2124,-4.0369,-4.3748,-4.5455,-5.633,-5.7136,-6.8737,-7.6055,-8.8603,-8.4726],[-5.5374,-5.5767,-5.8056,-2.6407,-2.8486,-2.922,-2.0588,-1.9287,-1.8866,-3.6556,-3.3938,-3.6115,-5.3895,-5.4351,-5.6675,-8.0956,-7.8777,-7.9647],[-6.4629,-5.9659,-5.6619,-3.057,-2.5612,-2.0499,-2.0884,-1.4542,-0.7125,-3.7427,-3.2832,-2.5732,-5.8575,-5.5514,-5.7233,-7.4009,-9.3764,-9.573],[-6.664,-7.3952,-9.3747,-4.1696,-5.0741,-5.6691,-2.7048,-3.2855,-3.6122,-2.0762,-2.5152,-2.6329,-3.5615,-4.1638,-4.3711,-6.3445,-7.08,-7.6332],[-6.2874,-6.7285,-7.0155,-3.8889,-3.8938,-4.5745,-2.2466,-2.2889,-2.3314,-1.5173,-1.5122,-1.4614,-3.2295,-3.2968,-3.3319,-6.0852,-6.6156,-6.4325],[-7.0906,-6.7546,-6.9677,-4.135,-3.7797,-3.7101,-2.2727,-1.7875,-1.2565,-1.5426,-0.7055,-0.2012,-3.4566,-2.9234,-2.4027,-6.8255,-6.5306,-6.5803],[-7.4617,-8.4346,-13.9607,-5.2,-6.5694,-7.9861,-4.0617,-4.8567,-5.0432,-2.4305,-2.8596,-2.9891,-1.7067,-2.1981,-2.191,-3.7719,-4.3691,-4.5255],[-7.4566,-7.5089,-13.9369,-5.2056,-5.6045,-5.9258,-3.6557,-3.7876,-4.3832,-1.9194,-1.9391,-2.0815,-1.1969,-1.1957,-1.2154,-3.362,-3.3731,-3.6285],[-7.4793,-8.718,-8.0846,-5.7385,-5.541,-5.8333,-3.768,-3.6725,-3.322,-1.9872,-1.4346,-1.0146,-1.2261,-0.4686,-0.0269,-3.6189,-3.0421,-2.6532],[-8.5683,-14.8684,-14.2943,-6.6914,-8.5997,-8.4686,-5.9044,-6.6483,-7.6249,-4.3033,-4.9786,-5.2003,-2.3943,-2.9865,-3.001,-1.1456,-1.5237,-1.7662],[-8.8301,-8.601,-8.1315,-6.2859,-7.7819,-8.4641,-6.0519,-5.8102,-6.694,-3.9474,-4.1524,-4.5665,-1.9753,-1.9785,-2.1922,-0.8352,-0.7678,-0.9782],[-8.8029,-8.8711,-8.7912,-7.5729,-6.8126,-7.7008,-5.6221,-5.5921,-6.0647,-4.1256,-4.0832,-3.7447,-2.1353,-1.5878,-1.214,-0.8498,-0.3345,-0.1989]],"m_nat":[7157467.5,2549657.0,553523.5,1935893.5,2739695.0,1828641.5,1658775.0,2556676.0,2565326.5,2013003.5,3034697.5,3960592.0,2550803.0,3643831.0,5237655.0,5557161.5,6354097.0,7121153.5],"f_nat":[5818215.5,2999728.0,989274.0,1586455.5,2374790.0,2462601.5,1691267.0,2267620.5,2807242.5,2328713.5,2993630.0,3893416.5,3116582.5,3730575.0,4943964.0,6343334.0,6746766.0,6364197.5],"metros":{"San Jose / Silicon Valley, CA":{"m":[70749.0,22400.0,11607.0,13733.0,22468.0,43986.0,12520.0,17732.0,54293.0,12260.0,19403.0,65750.0,18243.0,28364.0,79158.0,43821.0,47194.0,98594.0],"f":[50741.0,30638.0,14906.0,7914.0,18275.0,41720.0,9736.0,20088.0,40970.0,14798.0,25582.0,50815.0,22400.0,35639.0,63580.0,48023.0,64434.0,77196.0],"n":13969},"San Francisco, CA":{"m":[38413.0,12606.0,13598.0,10193.0,16750.0,39656.0,9770.0,14223.0,49724.0,15578.0,16384.0,52433.0,22042.0,24687.0,62872.0,50410.0,39526.0,78949.0],"f":[29737.0,15227.0,16549.0,5754.0,11862.0,42891.0,6399.0,13481.0,46121.0,11512.0,19301.0,54262.0,20667.0,25983.0,52019.0,40223.0,46729.0,76061.0],"n":11676},"Seattle, WA":{"m":[62972.0,29290.0,20063.0,18089.0,29437.0,55610.0,15991.0,28128.0,73052.0,18378.0,30314.0,87538.0,24422.0,34333.0,96670.0,43245.0,58860.0,114942.0],"f":[48079.0,34948.0,24783.0,13669.0,29855.0,50954.0,15840.0,26226.0,59948.0,17427.0,38649.0,74753.0,19838.0,39777.0,82573.0,45639.0,76604.0,94236.0],"n":15715},"Denver, CO":{"m":[19347.0,12745.0,4867.0,6994.0,20527.0,18873.0,7218.0,10573.0,25106.0,7693.0,14912.0,27749.0,7551.0,11867.0,27303.0,18636.0,18988.0,24266.0],"f":[15762.0,14870.0,10864.0,3242.0,11181.0,28865.0,3281.0,10665.0,26539.0,7360.0,9893.0,27945.0,8943.0,10347.0,22581.0,14825.0,18384.0,24202.0],"n":4983},"Austin, TX":{"m":[42009.0,20526.0,8029.0,10277.0,23799.0,34050.0,12139.0,23412.0,34417.0,12314.0,28074.0,51544.0,10443.0,24937.0,53413.0,25807.0,35789.0,55135.0],"f":[36450.0,21069.0,15720.0,6715.0,19375.0,34625.0,7556.0,19661.0,33952.0,11134.0,22095.0,41268.0,17978.0,26330.0,45066.0,25280.0,39853.0,50349.0],"n":8566},"Portland, OR":{"m":[20617.0,11527.0,3073.0,7951.0,14343.0,9958.0,11559.0,10623.0,15767.0,8022.0,18098.0,23454.0,11720.0,17032.0,25792.0,22475.0,25971.0,31991.0],"f":[17958.0,13353.0,4948.0,6839.0,13777.0,14272.0,4683.0,12034.0,20519.0,8586.0,12530.0,25454.0,9792.0,17361.0,29220.0,20327.0,28441.0,29239.0],"n":5621},"San Diego, CA":{"m":[139610.0,46312.0,10276.0,35933.0,48430.0,44027.0,29296.0,51283.0,61056.0,32459.0,52052.0,89877.0,38528.0,50930.0,110804.0,88289.0,96333.0,136706.0],"f":[97890.0,52786.0,17141.0,22753.0,45930.0,54504.0,25559.0,38711.0,62900.0,35562.0,52719.0,73990.0,49804.0,61124.0,83335.0,102781.0,106780.0,120596.0],"n":23615},"Phoenix, AZ":{"m":[160959.0,80990.0,14311.0,47141.0,80915.0,45187.0,37283.0,68726.0,62978.0,39585.0,79327.0,95946.0,60138.0,90709.0,133834.0,117515.0,148883.0,178990.0],"f":[132634.0,81021.0,26011.0,40558.0,67635.0,53779.0,44047.0,63154.0,63353.0,56218.0,62328.0,89208.0,78364.0,87696.0,119173.0,142885.0,165597.0,157691.0],"n":28507},"Dallas, TX":{"m":[101409.0,40470.0,11944.0,33529.0,41526.0,32697.0,23264.0,43100.0,33849.0,29630.0,52447.0,53318.0,38383.0,59788.0,54138.0,80182.0,84288.0,70680.0],"f":[80077.0,46035.0,20091.0,30561.0,38638.0,42636.0,29057.0,33885.0,38355.0,41527.0,43028.0,43856.0,59853.0,44580.0,55312.0,92673.0,77374.0,74585.0],"n":15781},"Houston, TX":{"m":[189786.0,62837.0,13780.0,61841.0,74567.0,41416.0,56144.0,76759.0,60677.0,65363.0,85971.0,97518.0,77012.0,112283.0,124811.0,138340.0,147350.0,132426.0],"f":[160378.0,77158.0,22185.0,65470.0,68386.0,55247.0,59421.0,59667.0,66397.0,77947.0,79515.0,90977.0,111538.0,90852.0,109656.0,182451.0,147131.0,112017.0],"n":26414},"Los Angeles, CA":{"m":[366892.0,103583.0,27559.0,127726.0,151343.0,98911.0,112019.0,143939.0,131745.0,135815.0,169090.0,194164.0,179958.0,199095.0,244491.0,360648.0,318648.0,319849.0],"f":[289968.0,156300.0,55355.0,87181.0,143482.0,125685.0,96028.0,124833.0,159989.0,148225.0,141475.0,190773.0,222858.0,174347.0,231401.0,440344.0,304205.0,304046.0],"n":68950},"Minneapolis, MN":{"m":[38121.0,19503.0,5871.0,7813.0,18500.0,17499.0,6065.0,16773.0,27668.0,10903.0,21151.0,37442.0,15450.0,21050.0,43796.0,28800.0,36771.0,59193.0],"f":[28107.0,18535.0,12958.0,4645.0,18859.0,29222.0,5807.0,13617.0,30279.0,12393.0,16198.0,37817.0,8477.0,22068.0,41873.0,20908.0,45070.0,60084.0],"n":5022},"Chicago, IL":{"m":[170598.0,58356.0,25056.0,51720.0,77898.0,71487.0,45745.0,63413.0,82212.0,56614.0,74176.0,128830.0,73968.0,98239.0,137981.0,170247.0,170935.0,169094.0],"f":[137242.0,84159.0,38449.0,39580.0,64419.0,104193.0,36244.0,63446.0,90001.0,54479.0,71700.0,122598.0,89208.0,106122.0,130600.0,176561.0,188151.0,188505.0],"n":26514},"Miami, FL":{"m":[96727.0,29010.0,5503.0,31250.0,41606.0,17619.0,28475.0,40426.0,30958.0,39642.0,54874.0,45858.0,49323.0,77057.0,65512.0,105289.0,113607.0,80202.0],"f":[74298.0,38069.0,12048.0,22799.0,36566.0,30031.0,26160.0,36929.0,34959.0,38603.0,46431.0,45758.0,55644.0,65941.0,64974.0,131975.0,106501.0,84411.0],"n":18790},"Boston, MA":{"m":[94003.0,33124.0,19013.0,17479.0,32449.0,56282.0,11153.0,26042.0,62203.0,17960.0,26140.0,73002.0,25947.0,31917.0,86029.0,63535.0,64105.0,111851.0],"f":[78681.0,42532.0,31308.0,8996.0,25124.0,70781.0,13498.0,20711.0,60612.0,18120.0,33745.0,71156.0,25780.0,36700.0,75927.0,58852.0,79255.0,117007.0],"n":18090},"Philadelphia, PA":{"m":[60026.0,19336.0,6992.0,19335.0,25371.0,22357.0,19654.0,24163.0,23095.0,20325.0,25890.0,26786.0,24571.0,30737.0,24717.0,63000.0,42345.0,36032.0],"f":[57526.0,23828.0,13647.0,19368.0,21466.0,29018.0,18103.0,26998.0,33565.0,18080.0,23035.0,33984.0,30477.0,22301.0,38925.0,68220.0,55510.0,37376.0],"n":5775},"New York, NY":{"m":[272344.0,72192.0,36802.0,92095.0,107404.0,125182.0,85770.0,107737.0,155097.0,102188.0,122898.0,181418.0,138298.0,154222.0,191611.0,328898.0,244395.0,238514.0],"f":[227320.0,113430.0,71026.0,71073.0,103103.0,180267.0,75334.0,97325.0,171202.0,115308.0,115934.0,186773.0,158655.0,158129.0,193050.0,369343.0,264337.0,286081.0],"n":47184},"Washington, DC":{"m":[23181.0,9106.0,5141.0,5493.0,6349.0,17330.0,5940.0,5188.0,28228.0,5065.0,4644.0,31163.0,5169.0,6808.0,23399.0,16954.0,8983.0,25136.0],"f":[24742.0,8201.0,11892.0,4077.0,6504.0,29836.0,2289.0,7734.0,29619.0,4113.0,6344.0,30053.0,4823.0,7470.0,26449.0,18681.0,13273.0,24581.0],"n":5091},"Atlanta, GA":{"m":[66255.0,21445.0,6973.0,17164.0,31219.0,24147.0,19832.0,23262.0,35816.0,16828.0,27487.0,45055.0,27599.0,31313.0,59838.0,47921.0,41379.0,78307.0],"f":[56111.0,29498.0,14793.0,10474.0,25496.0,40261.0,13166.0,24582.0,43561.0,17324.0,29105.0,51332.0,19080.0,37972.0,69677.0,48362.0,69317.0,72701.0],"n":11882},"Baltimore, MD":{"m":[20637.0,5332.0,1669.0,7953.0,8699.0,6960.0,6515.0,8304.0,7915.0,8038.0,9391.0,10631.0,8454.0,9393.0,8711.0,21841.0,15516.0,14369.0],"f":[17201.0,9850.0,4089.0,5167.0,7498.0,13633.0,6013.0,8509.0,13476.0,6326.0,9360.0,12512.0,8553.0,10838.0,14638.0,26302.0,20369.0,18656.0],"n":3453},"Memphis, TN":{"m":[29446.0,12134.0,944.0,13808.0,16818.0,4869.0,12073.0,10274.0,6979.0,12360.0,12123.0,12824.0,17457.0,16107.0,19259.0,27221.0,29174.0,27014.0],"f":[25894.0,15034.0,3295.0,10520.0,14549.0,10942.0,10185.0,14770.0,10898.0,12501.0,17355.0,15559.0,15328.0,19205.0,20529.0,29836.0,37495.0,33788.0],"n":5171}}}, { K: 100 });
+
+// IPFP equilibrium solver (Galichon-Salanie), generic in the number of types.
+function csSolve(pi, m, f){
+  const I=m.length, J=f.length, K=pi.map(r=>r.map(Math.exp));
+  let a=m.map(x=>Math.sqrt(x/2)), b=f.map(x=>Math.sqrt(x/2));
+  for(let it=0; it<4000; it++){
+    let maxd=0;
+    for(let i=0;i<I;i++){ let S=0; for(let j=0;j<J;j++) S+=K[i][j]*b[j];
+      const v=(-S+Math.sqrt(S*S+4*m[i]))/2; maxd=Math.max(maxd,Math.abs(v-a[i])); a[i]=v; }
+    for(let j=0;j<J;j++){ let T=0; for(let i=0;i<I;i++) T+=K[i][j]*a[i];
+      const v=(-T+Math.sqrt(T*T+4*f[j]))/2; maxd=Math.max(maxd,Math.abs(v-b[j])); b[j]=v; }
+    if(maxd<1e-11) break;
+  }
+  return { mu_i0:a.map(x=>x*x), mu_0j:b.map(x=>x*x) };
+}
+let CS_BASE=null;
+function csBaseline(){ if(!CS_BASE) CS_BASE=csSolve(CS.pi, CS.m_nat, CS.f_nat); return CS_BASE; }
+
+// Choo-Siow market adjustment for a US opposite-sex dater, read at the age-band level.
+function marketAdjustCS(f, incomeSub, eduSub){
+  const cityData = CS.metros[f.cityName];
+  if(!cityData) return null;
+  const male = f.gender==='male';
+  const w = male ? CS.weights_men : CS.weights_women;
+  const idx = w.income*incomeSub + w.education*eduSub;         // SES index (for display)
+  const edges = male ? CS.ses_edges_men : CS.ses_edges_women;
+  let sbin=0; while(sbin<edges.length && idx>edges[sbin]) sbin++;
+  let band=CS.age_bands.length-1;
+  for(let b=0;b<CS.age_bands.length;b++){ if(f.age<=CS.age_bands[b][1]){ band=b; break; } }
+  const NS=CS.nses;
+  const base=csBaseline(), city=csSolve(CS.pi, cityData.m, cityData.f);
+  let db=0, dc=0;                                              // avg single-rate over SES in the band
+  for(let s=0;s<NS;s++){ const t=band*NS+s;
+    if(male){ db+=base.mu_i0[t]/CS.m_nat[t]; dc+=city.mu_i0[t]/cityData.m[t]; }
+    else    { db+=base.mu_0j[t]/CS.f_nat[t]; dc+=city.mu_0j[t]/cityData.f[t]; } }
+  const baseRate=db/NS, cityRate=dc/NS;
+  const shift=clamp(-CS.K*(cityRate-baseRate), -MODEL.marketMaxShift, MODEL.marketMaxShift);
+  return { model:'choosiow', shift, band, sbin, baseRate, cityRate };
+}
+
+const TIERS = [
+  [96, "Federally Regulated Hottie", "So attractive it's basically a public-safety issue — the FDA wants a word. Please date responsibly."],
+  [88, "Menace to the Market", "You're single-handedly causing inflation in the local dating economy. Antitrust is circling."],
+  [78, "Human Charcuterie Board", "An absurdly complete snack. People screenshot you to the group chat with three exclamation marks."],
+  [66, "Right-Swipe Reflex", "People match with you before their brain has fully loaded. Enjoy the involuntary popularity."],
+  [52, "Perfectly Cromulent", "Gloriously, defiantly average — the platonic median. The market cleared, and the price was you."],
+  [38, "Motivated Fixer-Upper", "Great bones, a couple of renovations from a bidding war. Zillow would call you 'cozy, with potential.'"],
+  [22, "Limited Edition", "Not for everyone — and thank god. Your one person is going to be absolutely unhinged about you."],
+  [0,  "Speedrunning the Glow-Up", "Stats are shy today, but you're clearly grinding the personality skill tree. Charisma is DLC — and you bought it."],
+];
+
+// lifestyle answer -> "broad appeal" subscore (0-100). Playful, lightly grounded (dog owners, active
+// social lives, and prompt-but-not-desperate texters tend to do modestly better on dating profiles).
+const LIFESTYLE = {
+  q_pets:    { dog:74, both:71, cat:60, none:45 },
+  q_friday:  { group:64, friends:70, cozy:48, adventure:76 },
+  q_reply:   { instant:56, hours:76, later:34 },
+  q_date:    { cook:70, restaurant:60, activity:78, drink:50 },
+  q_weekend: { gym:72, travel:76, brunch:64, netflix:44 },
+  q_money:   { saver:62, balanced:74, spender:48 },
+};
+const LIFE_QS = ['q_pets','q_friday','q_reply','q_date','q_weekend','q_money'];
+function readLifestyle(){
+  const life = {};
+  LIFE_QS.forEach(q=>{ const el=document.querySelector('#'+q+' .active'); life[q]= el ? el.dataset.val : null; });
+  return life;
+}
+function lifestyleAppeal(life){
+  let s=0,n=0;
+  LIFE_QS.forEach(q=>{ const k=life[q]; if(k!=null && LIFESTYLE[q] && LIFESTYLE[q][k]!=null){ s+=LIFESTYLE[q][k]; n++; } });
+  return n ? s/n : 55;
+}
+// build a fun one-line persona from a few answers
+function buildPersona(life){
+  const FRI = {group:'life-of-the-party', friends:'down-to-earth', cozy:'low-key', adventure:'adventurous'};
+  const WKND= {gym:'gym-devoted', travel:'jet-setting', brunch:'social', netflix:'homebody'};
+  const PET = {dog:'dog person', cat:'cat person', both:'animal lover', none:'pet-free spirit'};
+  const fri = FRI[life.q_friday] || 'easygoing';
+  const wknd= WKND[life.q_weekend] || 'balanced';
+  const pet = PET[life.q_pets] || 'free agent';
+  return `${fri.charAt(0).toUpperCase()+fri.slice(1)}, ${wknd} ${pet}`;
+}
+
+/* ---------- helpers ---------- */
+function interp(x, pts){
+  if (x <= pts[0][0]) return pts[0][1];
+  if (x >= pts[pts.length-1][0]) return pts[pts.length-1][1];
+  for (let i=0;i<pts.length-1;i++){
+    const [x0,y0]=pts[i],[x1,y1]=pts[i+1];
+    if (x>=x0 && x<=x1) return y0 + (y1-y0)*(x-x0)/(x1-x0);
+  }
+  return 50;
+}
+function clamp(v,lo,hi){ return Math.max(lo, Math.min(hi, v)); }
+// normal CDF via erf approximation (Abramowitz & Stegun 7.1.26)
+function normalCdf(z){
+  const t = 1/(1+0.2316419*Math.abs(z));
+  const d = 0.3989423*Math.exp(-z*z/2);
+  let p = d*t*(0.3193815+t*(-0.3565638+t*(1.781478+t*(-1.821256+t*1.330274))));
+  return z>0 ? 1-p : p;
+}
+
+function readForm(){
+  const g = document.querySelector('#gender .active').dataset.val;
+  const t = document.querySelector('#target .active').dataset.val;
+  const life = readLifestyle();
+  return {
+    gender: g, target: t,
+    age: +age.value,
+    cityRatio: +city.value,
+    cityName: city.options[city.selectedIndex].text,
+    cityRegion: city.options[city.selectedIndex].dataset.region || '',
+    income: +income.value,
+    education: education.value,
+    occupation: +occupation.value,
+    height: +height.value,
+    looks: +looks.value,
+    pers: {
+      warmth:+p_warmth.value, humor:+p_humor.value, ambition:+p_ambition.value,
+      confidence:+p_confidence.value, extraversion:+p_extraversion.value, stability:+p_stability.value,
+    },
+    life: life,
+    lifestyle: lifestyleAppeal(life),
+  };
+}
+
+function personalityScore(pers, mix){
+  let s=0, w=0;
+  for (const k in mix){ s += pers[k]*mix[k]; w += mix[k]; }
+  return s/w;
+}
+
+function evaluatorProfiles(target){
+  // returns array of {weights, persMix} to average over (1 for men/women, 2 for everyone)
+  if (target==='women') return [{w:MODEL.weights.womenPrefs, m:MODEL.personalityMix.womenPrefs}];
+  if (target==='men')   return [{w:MODEL.weights.menPrefs,   m:MODEL.personalityMix.menPrefs}];
+  return [{w:MODEL.weights.womenPrefs, m:MODEL.personalityMix.womenPrefs},
+          {w:MODEL.weights.menPrefs,   m:MODEL.personalityMix.menPrefs}];
+}
+
+function compute(f, overrides){
+  // own-gender sub-scores
+  const sub = {
+    attractiveness: interp(f.looks, MODEL.looksPts),
+    income: interp(f.income, MODEL.incomePts),
+    height: interp(f.height, MODEL.heightPts[f.gender]),
+    occupation: f.occupation,
+    age: interp(f.age, MODEL.ageCurve[f.gender]),
+    education: MODEL.educationMap[f.education],
+    lifestyle: f.lifestyle,
+  };
+
+  const profiles = evaluatorProfiles(f.target);
+  // average weights and personality sub-scores across relevant evaluators
+  const attrs = ['attractiveness','income','height','occupation','age','education','personality','lifestyle'];
+  const wAvg = {}; attrs.forEach(a=>wAvg[a]=0);
+  let persAvg = 0;
+  profiles.forEach(p=>{
+    for (const a in p.w) wAvg[a]+=p.w[a]/profiles.length;
+    persAvg += personalityScore(f.pers, p.m)/profiles.length;
+  });
+  sub.personality = persAvg;
+
+  // "what-if" override of one or more sub-scores (used by the levers feature)
+  if (overrides) for (const k in overrides) sub[k] = overrides[k];
+
+  // weighted raw score (0..100)
+  let raw=0, wsum=0;
+  const contrib = {};
+  attrs.forEach(a=>{ raw += sub[a]*wAvg[a]; wsum += wAvg[a]; contrib[a]={score:sub[a],weight:wAvg[a]}; });
+  raw = raw/wsum;
+
+  // spread through a normal so the median single (~57 raw) maps near p50.
+  // center/spread calibrated so median-input people land ~50th and archetypes fan
+  // realistically across the range. (Recalibrated once research-backed weights land.)
+  const z = (raw - MODEL.center) / MODEL.spread;
+  let pct = normalCdf(z)*100;
+
+  // ---- market adjustment ----
+  const ratio = f.cityRatio; // men per 100 women
+  const oppSex = (f.gender==='male' && f.target==='women') || (f.gender==='female' && f.target==='men');
+  let shift, market = null;
+  if (f.cityRegion==='United States' && oppSex)
+    market = marketAdjustCS(f, sub.income, sub.education);   // Choo-Siow equilibrium on ACS metro data
+  if (market){
+    shift = market.shift;
+  } else {
+    // sex-ratio model (international, same-sex, or "everyone")
+    const ownSupply = f.gender==='male' ? ratio/100 : 100/ratio;
+    shift = -clamp((ownSupply-1)*22, -MODEL.marketMaxShift, MODEL.marketMaxShift);
+    if (f.target==='everyone') shift *= 0.5;
+    market = { model:'sexratio', shift };
+  }
+  pct = clamp(pct + shift, 1, 99);
+
+  return { pct: Math.round(pct), raw, contrib, sub, shift, market, ratio };
+}
+
+/* ---------- rendering ---------- */
+function tierFor(pct){ for (const t of TIERS){ if (pct>=t[0]) return t; } return TIERS[TIERS.length-1]; }
+
+function drawCurve(pct){
+  const W=700,H=200, m=24;
+  const cx=(x)=> m + (x/100)*(W-2*m);
+  const gy=(x)=> Math.exp(-Math.pow((x-50)/17,2)/2); // gaussian shape
+  const maxG=1;
+  const topY=20, botY=H-30;
+  const cy=(g)=> botY - (g/maxG)*(botY-topY);
+  let line='', area='M '+cx(0)+' '+botY;
+  for (let x=0;x<=100;x+=1){ const X=cx(x), Y=cy(gy(x)); line+=(x===0?'M ':'L ')+X+' '+Y+' '; }
+  // shaded area up to pct
+  area='M '+cx(0)+' '+botY+' ';
+  for (let x=0;x<=pct;x+=1){ area+='L '+cx(x)+' '+cy(gy(x))+' '; }
+  area+='L '+cx(pct)+' '+botY+' Z';
+  const mx=cx(pct), my=cy(gy(pct));
+  // place the "you" label above the marker, nudged inward near the edges so it never clips
+  const anchor = pct>86 ? 'end' : (pct<14 ? 'start' : 'middle');
+  const labelY = Math.max(15, my-14);
+  document.getElementById('curve').innerHTML = `
+    <defs>
+      <linearGradient id="fill" x1="0" x2="1">
+        <stop offset="0" stop-color="#7c5cff" stop-opacity="0.55"/>
+        <stop offset="1" stop-color="#ff5c8a" stop-opacity="0.75"/>
+      </linearGradient>
+    </defs>
+    <path d="${area}" fill="url(#fill)"/>
+    <path d="${line}" fill="none" stroke="#c9c4ff" stroke-width="2.5"/>
+    <line x1="${mx}" y1="${my-4}" x2="${mx}" y2="${botY}" stroke="#fff" stroke-width="2" stroke-dasharray="4 4"/>
+    <circle cx="${mx}" cy="${my}" r="6" fill="#fff"/>
+    <text x="${mx}" y="${labelY}" fill="#fff" font-size="13" font-weight="700" text-anchor="${anchor}">you</text>
+    <text x="${cx(3)}" y="${botY+18}" fill="#565b85" font-size="11">less competitive</text>
+    <text x="${cx(97)}" y="${botY+18}" fill="#565b85" font-size="11" text-anchor="end">more competitive</text>`;
+}
+
+const ATTR_LABELS = {
+  attractiveness:'Looks', income:'Income', height:'Height', occupation:'Career prestige',
+  age:'Age', education:'Education', personality:'Personality', lifestyle:'Lifestyle',
+};
+function drawBreakdown(contrib){
+  const order = ['attractiveness','age','income','occupation','education','height','personality','lifestyle'];
+  const el = document.getElementById('breakdown');
+  el.innerHTML = order.map(a=>{
+    const s = Math.round(contrib[a].score);
+    const col = s>=50 ? 'var(--good)' : 'var(--bad)';
+    return `<div class="bar-row">
+      <div class="bar-label">${ATTR_LABELS[a]}</div>
+      <div class="bar-track"><div class="mid"></div><div class="bar-fill" data-w="${s}" style="width:0%;background:${col}"></div></div>
+      <div class="bar-val" style="color:${col}">${s}</div>
+    </div>`;
+  }).join('');
+  // animate fills from 0 -> target (CSS transition on width), robust to paused rAF
+  const fills = el.querySelectorAll('.bar-fill');
+  const paint = ()=> fills.forEach(b=>{ b.style.width = b.dataset.w + '%'; });
+  if (REDUCE_MOTION || document.hidden) paint();
+  else requestAnimationFrame(()=>requestAnimationFrame(paint));
+  setTimeout(paint, 450); // safety net if rAF is paused
+}
+
+let LAST=null;
+function run(){
+  const f = readForm();
+  const r = compute(f);
+  LAST = {f,r};
+  const [,name,desc] = tierFor(r.pct);
+  document.getElementById('tier').textContent = name;
+  animateNumber(document.getElementById('pct'), r.pct, 950, v=>'Top ' + (100-Math.round(v)) + '%');
+  document.getElementById('pct-label').textContent = "that's the " + ordinal(r.pct) + ' percentile among singles in ' + shortCity(f.cityName);
+  document.getElementById('tier-desc').textContent = desc;
+  document.getElementById('persona').innerHTML = 'Your vibe reads as <b>' + buildPersona(f.life) + '</b>.';
+  drawCurve(r.pct);
+  drawBreakdown(r.contrib);
+  renderLevers(f, r);
+
+  const mn = document.getElementById('market-note');
+  const city = shortCity(f.cityName);
+  if (r.market && r.market.model==='choosiow'){
+    const bp=Math.round(r.market.baseRate*100), cp=Math.round(r.market.cityRate*100), sh=Math.round(r.shift);
+    const dir = r.shift>=0 ? 'friendlier' : 'tougher';
+    mn.innerHTML = '📍 <b>Choo–Siow market model</b> (estimated on real ' + city + ' census data): re-solving the marriage-market equilibrium for your city, people of your age &amp; gender are predicted single <b>' + cp + '%</b> of the time there vs <b>' + bp + '%</b> nationally — a ' + dir + ' market for you, <b>' + (sh>=0?'+':'') + sh + '</b> pts.';
+  } else if (Math.abs(r.shift) < 0.6){
+    mn.textContent = '📍 Your city applies no notable market adjustment.';
+  } else if (r.shift>0){
+    mn.innerHTML = '📍 Your gender is <b>scarcer</b> than the people you\'re after in ' + city + ' — that market advantage bumped you up <b>+' + Math.round(r.shift) + '</b> points.';
+  } else {
+    mn.innerHTML = '📍 You\'re in a <b>crowded</b> market in ' + city + ' — more competition on your side pulled you down <b>' + Math.round(r.shift) + '</b> points.';
+  }
+
+  const res = document.getElementById('results');
+  res.classList.add('show');
+  res.scrollIntoView({behavior:'smooth', block:'start'});
+}
+function ordinal(n){ const s=['th','st','nd','rd'], v=n%100; return n+(s[(v-20)%10]||s[v]||s[0]); }
+function shortCity(name){ return name.replace(/ *\(.*\)/,''); }
+
+const REDUCE_MOTION = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+// count-up animation (ease-out cubic) with a guaranteed final value even if rAF is paused
+function animateNumber(el, to, dur, fmt){
+  if (REDUCE_MOTION || document.hidden){ el.textContent = fmt(to); return; }
+  const start = performance.now();
+  let done = false;
+  el.textContent = fmt(0);
+  function tick(now){
+    let t = Math.min(1, (now-start)/dur);
+    t = 1 - Math.pow(1-t, 3);
+    el.textContent = fmt(to*t);
+    if (t < 1) requestAnimationFrame(tick); else done = true;
+  }
+  requestAnimationFrame(tick);
+  // safety net: if the tab is backgrounded mid-animation (rAF pauses), still land on the final value
+  setTimeout(()=>{ if(!done) el.textContent = fmt(to); }, dur + 400);
+}
+
+/* ---------- biggest levers (only actionable dimensions) ---------- */
+const LEVER_COPY = {
+  attractiveness: ['your look', 'style, fitness, and better photos'],
+  income:         ['your income', 'a jump to the next income bracket'],
+  occupation:     ['your career', 'a higher-status role'],
+  education:      ['your education', 'another credential'],
+  personality:    ['your personality', 'leaning into warmth, humor & confidence'],
+  lifestyle:      ['your lifestyle', 'a more active, social & responsive rhythm'],
+};
+function renderLevers(f, r){
+  const box = document.getElementById('levers');
+  const out = [];
+  for (const a in LEVER_COPY){
+    const cur = r.sub[a];
+    if (cur >= 90) continue;                       // already near-maxed
+    const target = Math.min(96, cur + 25);         // a realistic push
+    const gain = compute(f, {[a]: target}).pct - r.pct;
+    if (gain >= 1) out.push({ a, gain: Math.round(gain), label: LEVER_COPY[a][0], how: LEVER_COPY[a][1] });
+  }
+  out.sort((x,y)=>y.gain-x.gain);
+  const top = out.slice(0,2);
+  if (!top.length){ box.style.display='none'; return; }
+  box.style.display = 'block';
+  box.innerHTML = '<h4>Your biggest levers</h4>' + top.map(l=>
+    `<div class="lever"><span class="g">+${l.gain} pts</span><span>Improving <b>${l.label}</b> — ${l.how}.</span></div>`
+  ).join('');
+}
+
+/* ---------- pin & compare ---------- */
+let PINNED = [];
+function profileName(f){
+  const g = f.gender==='male' ? 'Him' : 'Her';
+  const city = shortCity(f.cityName).replace(/,.*$/,'');
+  return `${g} · ${f.age} · ${city}`;
+}
+function pinCurrent(){
+  if (!LAST) return;
+  const {f,r} = LAST;
+  PINNED.push({ name: profileName(f), pct: r.pct, sub: {...r.sub} });
+  if (PINNED.length > 2) PINNED.shift();
+  renderCompare();
+  const b = document.getElementById('pin'), o = '📌 Pin to compare';
+  b.textContent = PINNED.length>=2 ? '📌 Pinned — compared below' : '📌 Pinned! Now change answers & pin again';
+  setTimeout(()=>b.textContent=o, 2200);
+}
+function renderCompare(){
+  const wrap = document.getElementById('compare'), cols = document.getElementById('compare-cols');
+  if (!PINNED.length){ wrap.classList.remove('show'); return; }
+  wrap.classList.add('show');
+  const dims = ['attractiveness','age','income','occupation','education','height','personality','lifestyle'];
+  let html = PINNED.map(p =>
+    `<div class="cmp-card"><h5>${p.name}</h5><div class="cmp-pct">Top ${100-p.pct}%</div>` +
+    dims.map(d=>{ const s=Math.round(p.sub[d]); const col = s>=50?'var(--good)':'var(--bad)';
+      return `<div class="cmp-row"><span>${ATTR_LABELS[d]}</span><span class="t"><div style="width:${s}%;background:${col}"></div></span><span>${s}</span></div>`;
+    }).join('') + `</div>`
+  ).join('');
+  if (PINNED.length === 1)
+    html += `<div class="cmp-card placeholder">Change your answers above, hit Calculate, then <b>&nbsp;Pin&nbsp;</b> again to line them up side by side.</div>`;
+  cols.innerHTML = html;
+}
+
+/* ---------- save result as an image (user-initiated download) ---------- */
+function saveImage(){
+  if (!LAST) return;
+  const {f,r} = LAST; const tier = tierFor(r.pct);
+  const W=1080, H=1080, c=document.createElement('canvas'); c.width=W; c.height=H;
+  const x=c.getContext('2d');
+  const bg=x.createLinearGradient(0,0,W,H); bg.addColorStop(0,'#231640'); bg.addColorStop(.55,'#141428'); bg.addColorStop(1,'#0f1020');
+  x.fillStyle=bg; x.fillRect(0,0,W,H);
+  x.textAlign='center';
+  x.fillStyle='#ff8fb0'; x.font='700 30px -apple-system,Segoe UI,Roboto,sans-serif';
+  x.fillText(tier[1].toUpperCase(), W/2, 210);
+  // big percentile with gradient
+  const tg=x.createLinearGradient(W/2-260,0,W/2+260,0); tg.addColorStop(0,'#ff5c8a'); tg.addColorStop(1,'#7c5cff');
+  x.fillStyle=tg; x.font='900 200px -apple-system,Segoe UI,Roboto,sans-serif';
+  x.fillText('Top '+(100-r.pct)+'%', W/2, 400);
+  x.fillStyle='#a3a8cf'; x.font='400 34px -apple-system,Segoe UI,Roboto,sans-serif';
+  x.fillText(ordinal(r.pct)+' percentile of singles in '+shortCity(f.cityName), W/2, 470);
+  // bell curve
+  const L=140, R=W-140, top=560, bot=830;
+  const gx=v=>L+(v/100)*(R-L), gyv=v=>Math.exp(-Math.pow((v-50)/17,2)/2), gy=g=>bot-g*(bot-top);
+  x.beginPath(); x.moveTo(L,bot);
+  for(let v=0;v<=100;v++) x.lineTo(gx(v),gy(gyv(v)));
+  x.lineTo(R,bot); x.closePath();
+  const fg=x.createLinearGradient(L,0,R,0); fg.addColorStop(0,'rgba(124,92,255,.45)'); fg.addColorStop(1,'rgba(255,92,138,.6)');
+  x.fillStyle=fg; x.fill();
+  x.beginPath(); x.moveTo(L,gy(gyv(0)));
+  for(let v=0;v<=100;v++) x.lineTo(gx(v),gy(gyv(v)));
+  x.strokeStyle='#c9c4ff'; x.lineWidth=4; x.stroke();
+  const mx=gx(r.pct), my=gy(gyv(r.pct));
+  x.setLineDash([8,8]); x.beginPath(); x.moveTo(mx,my); x.lineTo(mx,bot); x.strokeStyle='#fff'; x.lineWidth=3; x.stroke(); x.setLineDash([]);
+  x.beginPath(); x.arc(mx,my,13,0,7); x.fillStyle='#fff'; x.fill();
+  x.fillStyle='#fff'; x.font='700 26px -apple-system,Segoe UI,Roboto,sans-serif';
+  x.fillText('you', mx, my-26);
+  // footer
+  x.fillStyle='#7f84ad'; x.font='500 30px -apple-system,Segoe UI,Roboto,sans-serif';
+  x.fillText("What's your dating market percentile?", W/2, 960);
+  x.fillStyle='#565b85'; x.font='400 24px -apple-system,Segoe UI,Roboto,sans-serif';
+  x.fillText('just for fun · not a judgment of anyone', W/2, 1005);
+  const a=document.createElement('a'); a.href=c.toDataURL('image/png'); a.download='my-dating-percentile.png'; a.click();
+}
+
+/* ---------- wiring ---------- */
+// build city dropdown with region optgroups
+(function(){
+  const groups = {};
+  CITIES.forEach(([n,r,region])=>{
+    const o = document.createElement('option'); o.value = r; o.textContent = n;
+    o.dataset.region = region || '';
+    if (n.startsWith('New York')) o.selected = true;
+    if (!region){ city.appendChild(o); return; }
+    if (!groups[region]){ const g=document.createElement('optgroup'); g.label=region; groups[region]=g; city.appendChild(g); }
+    groups[region].appendChild(o);
+  });
+})();
+
+// segmented controls
+document.querySelectorAll('.seg').forEach(seg=>{
+  seg.addEventListener('click', e=>{
+    if(e.target.tagName!=='BUTTON') return;
+    seg.querySelectorAll('button').forEach(b=>b.classList.remove('active'));
+    e.target.classList.add('active');
+    // if a woman, default target to men-ish? keep user control; just update on gender change
+  });
+});
+
+// live slider labels
+function bindSlider(id, fmt){ const el=document.getElementById(id), out=document.getElementById(id+'-val');
+  const upd=()=>out.textContent=fmt?fmt(el.value):el.value; el.addEventListener('input',upd); upd(); }
+bindSlider('age');
+bindSlider('height', v=>{ const inch=Math.round(v/2.54); const ft=Math.floor(inch/12), ins=inch%12; return v+' cm · '+ft+"'"+ins+'"'; });
+bindSlider('looks');
+['warmth','humor','ambition','confidence','extraversion','stability'].forEach(k=>bindSlider('p_'+k));
+
+document.getElementById('calc').addEventListener('click', run);
+document.getElementById('recalc').addEventListener('click', ()=>document.getElementById('form-card').scrollIntoView({behavior:'smooth'}));
+document.getElementById('copy').addEventListener('click', ()=>{
+  if(!LAST) return;
+  const t = tierFor(LAST.r.pct)[1];
+  const txt = `I ranked "${t}" — top ${100-LAST.r.pct}% in my local dating market. What's yours?`;
+  navigator.clipboard.writeText(txt).then(()=>{ const b=document.getElementById('copy'); const o=b.textContent; b.textContent='✓ Copied!'; setTimeout(()=>b.textContent=o,1500); });
+});
+document.getElementById('pin').addEventListener('click', pinCurrent);
+document.getElementById('saveimg').addEventListener('click', saveImage);
+document.getElementById('clear-compare').addEventListener('click', ()=>{ PINNED=[]; renderCompare(); });
+</script>
+</body>
+</html>
