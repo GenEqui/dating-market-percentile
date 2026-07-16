@@ -1007,17 +1007,17 @@ function run(){
         ? '🧳 Rough luck: <b>' + city + '</b> is your <b>toughest</b> US market. Friendliest would be <b>' + shortCity(st.best.name) + '</b> (' + rs(st.best.shift) + '). Just saying.'
         : '🛫 If you\'d relocate for love: friendliest is <b>' + shortCity(st.best.name) + '</b> (' + rs(st.best.shift) + '), brutal is <b>' + shortCity(st.worst.name) + '</b> (' + rs(st.worst.shift) + '). The data\'s just saying.';
     const flipTile = st.flip
-      ? tile('Tables turn at', '~' + st.flip, st.flipDir==='women' ? 'then it\'s ladies\' night' : 'then it\'s a boys\' club')
-      : tile('Never flips', st.ratios[st.band]>=100 ? 'Men-heavy' : 'Women-heavy', 'at literally every age');
+      ? tile('Flips at age', '~' + st.flip, st.flipDir==='women' ? 'then more single women' : 'then more single men')
+      : tile('Sex ratio', st.ratios[st.band]>=100 ? 'Men-heavy' : 'Women-heavy', 'at every age here');
     const tierCap = st.tierName.charAt(0).toUpperCase()+st.tierName.slice(1);
     mn.innerHTML =
       '📍 <b>Your local scene</b> — ' + r.market.bandLabel + '-year-old singles in ' + city + ':'
       + pictograph(lr)
       + '<div class="scene-cap">≈ <b>' + lr + ' single men per 100 single women</b> <span style="opacity:.6">(real census data)</span>. ' + sceneCap(lr) + ' ' + tilt(r.shift) + '</div>'
       + '<div class="lm-tiles">' + flipTile
-        + tile('Spoken for', st.pctTaken + '%', 'of ' + st.targetWord + ' your age 💍')
-        + tile('City rank', '#' + st.rank + '/' + st.total, (st.rank<=Math.ceil(st.total/2)?'friendlier end 😌':'tougher end 😬'))
-        + tile('You, on paper', tierCap + ' third', 'you out-CV ~' + st.elig + '%')
+        + tile('Already taken', st.pctTaken + '%', 'of ' + st.targetWord + ' your age here')
+        + tile('City rank', '#' + st.rank + ' of ' + st.total, '1 = friendliest for you')
+        + tile('Rank on paper', tierCap + ' third', 'on income + education, vs rivals')
       + '</div>'
       + '<div class="lm-sub">Single men per 100 single women, by age <span style="opacity:.6">(100 = even)</span>:</div>'
       + ratioSparkline(st.ratios, st.band)
