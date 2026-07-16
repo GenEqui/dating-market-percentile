@@ -141,6 +141,13 @@
   .lm-comp .bar { display:flex; height:22px; border-radius:6px; overflow:hidden; gap:2px; }
   .lm-comp .seg { display:flex; align-items:center; justify-content:center; font-size:10.5px; font-weight:700; color:#fff; min-width:0; }
   .lm-comp .cap { font-size:11.5px; color:var(--muted); margin-top:6px; }
+  .lm-comp .seg { cursor:default; transition:filter .12s; }
+  .lm-comp .seg:hover { filter:brightness(1.18); }
+  #lm-tip { position:fixed; z-index:9999; pointer-events:none; opacity:0; transition:opacity .12s;
+    background:#0e0f22; border:1px solid var(--line); color:var(--text); font-size:12px; line-height:1.45;
+    padding:7px 10px; border-radius:9px; max-width:240px; box-shadow:0 10px 30px rgba(0,0,0,.55); }
+  #lm-tip b { color:#fff; }
+  .lm-help { cursor:help; text-decoration:underline dotted; text-underline-offset:2px; }
   .share-row { display:flex; gap:10px; margin-top: 20px; flex-wrap: wrap; }
   .share-row button { flex:1; min-width: 140px; background:#14152b; border:1px solid var(--line); color:var(--text);
     padding: 12px; border-radius: 12px; cursor:pointer; font-weight:600; font-size:14px; }
@@ -691,23 +698,36 @@ function ratioSparkline(ratios, band){
   ratios.forEach((r,i)=>{ const x=X(i).toFixed(1),y=Y(r).toFixed(1); line+=(i?'L':'M')+x+' '+y+' '; area+='L '+x+' '+y+' '; });
   area+='L '+X(n-1).toFixed(1)+' '+(H-16)+' Z';
   const y100=Y(100).toFixed(1), ux=X(band).toFixed(1), uy=Y(ratios[band]).toFixed(1);
+  const sp=(W-2*pad)/(n-1); let dots='', hits='';
+  ratios.forEach((r,i)=>{
+    if(i!==band) dots+='<circle cx="'+X(i).toFixed(1)+'" cy="'+Y(r).toFixed(1)+'" r="2.6" fill="#c9c4ff"/>';
+    const ab=CS.age_bands[i];
+    const tip='<b>Ages '+ab[0]+'–'+ab[1]+'</b><br>'+Math.round(r)+' single men per 100 single women'+(i===band?' &nbsp;·&nbsp; your bracket':'');
+    hits+='<rect x="'+Math.max(0,X(i)-sp/2).toFixed(1)+'" y="0" width="'+sp.toFixed(1)+'" height="'+H+'" fill="transparent" pointer-events="all" data-tip="'+tip+'"/>';
+  });
   return '<svg class="lm-spark" viewBox="0 0 '+W+' '+H+'" width="100%" preserveAspectRatio="xMidYMid meet">'
     +'<defs><linearGradient id="spk" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#7c5cff" stop-opacity=".4"/><stop offset="1" stop-color="#7c5cff" stop-opacity="0"/></linearGradient></defs>'
     +'<line x1="'+pad+'" y1="'+y100+'" x2="'+(W-pad)+'" y2="'+y100+'" stroke="#565b85" stroke-width="1" stroke-dasharray="4 4"/>'
     +'<text x="'+(W-pad)+'" y="'+(+y100-4)+'" fill="#6a6f96" font-size="10" text-anchor="end">even</text>'
     +'<path d="'+area+'" fill="url(#spk)"/><path d="'+line+'" fill="none" stroke="#c9c4ff" stroke-width="2"/>'
+    + dots
     +'<circle cx="'+ux+'" cy="'+uy+'" r="4.5" fill="#ff5c8a" stroke="#fff" stroke-width="1.5"/>'
     +'<text x="'+ux+'" y="'+(+uy-9)+'" fill="#ff8fb0" font-size="10" font-weight="700" text-anchor="middle">you</text>'
     +'<text x="'+X(0)+'" y="'+(H-3)+'" fill="#6a6f96" font-size="10">age '+CS.age_bands[0][0]+'</text>'
-    +'<text x="'+(W-pad)+'" y="'+(H-3)+'" fill="#6a6f96" font-size="10" text-anchor="end">'+CS.age_bands[n-1][1]+'</text></svg>';
+    +'<text x="'+(W-pad)+'" y="'+(H-3)+'" fill="#6a6f96" font-size="10" text-anchor="end">'+CS.age_bands[n-1][1]+'</text>'
+    + hits +'</svg>';
 }
 // sequential stacked bar: SES makeup of the single target pool (top → lower)
 function compBar(comp, targetWord){
   const col=['#33356a','#6a5acd','#8f7aff'];   // sequential purple ramp, lower→top
+  const nm=['Lower','Middle','Top'], desc=['national bottom third','national middle third','national top third'];
   let segs='';
-  for(let i=2;i>=0;i--){ if(comp[i]<=0) continue; segs+='<div class="seg" style="flex:'+comp[i]+';background:'+col[i]+'">'+(comp[i]>=12?comp[i]+'%':'')+'</div>'; }
+  for(let i=2;i>=0;i--){ if(comp[i]<=0) continue;
+    const tip='<b>'+nm[i]+' tier — '+comp[i]+'%</b><br>'+desc[i]+' on income + education';
+    segs+='<div class="seg" style="flex:'+comp[i]+';background:'+col[i]+'" data-tip="'+tip+'">'+(comp[i]>=12?comp[i]+'%':'')+'</div>'; }
+  const help='SES = a combined income + education score. Everyone is sorted into national thirds (top / middle / lower); this bar is the mix of the single '+targetWord+' in your bracket here.';
   return '<div class="lm-comp"><div class="bar">'+segs+'</div>'
-    +'<div class="cap">SES makeup of single '+targetWord+' your age: <b style="color:#c9c4ff">'+comp[2]+'% top</b> · '+comp[1]+'% mid · '+comp[0]+'% lower <span style="opacity:.6">(income + education)</span></div></div>';
+    +'<div class="cap">Income + education tier of single '+targetWord+' your age: <b style="color:#c9c4ff">'+comp[2]+'% top</b> · '+comp[1]+'% mid · '+comp[0]+'% lower <span class="lm-help" data-tip="'+help+'">what\'s this?</span></div></div>';
 }
 
 const TIERS = [
@@ -987,17 +1007,17 @@ function run(){
         ? '🧳 Rough luck: <b>' + city + '</b> is your <b>toughest</b> US market. Friendliest would be <b>' + shortCity(st.best.name) + '</b> (' + rs(st.best.shift) + '). Just saying.'
         : '🛫 If you\'d relocate for love: friendliest is <b>' + shortCity(st.best.name) + '</b> (' + rs(st.best.shift) + '), brutal is <b>' + shortCity(st.worst.name) + '</b> (' + rs(st.worst.shift) + '). The data\'s just saying.';
     const flipTile = st.flip
-      ? tile('Market flips at', '~' + st.flip, 'tips ' + st.flipDir + '-heavy after')
-      : tile('Sex ratio', st.ratios[st.band]>=100 ? 'Men-heavy' : 'Women-heavy', 'at every age here');
+      ? tile('Tables turn at', '~' + st.flip, st.flipDir==='women' ? 'then it\'s ladies\' night' : 'then it\'s a boys\' club')
+      : tile('Never flips', st.ratios[st.band]>=100 ? 'Men-heavy' : 'Women-heavy', 'at literally every age');
     const tierCap = st.tierName.charAt(0).toUpperCase()+st.tierName.slice(1);
     mn.innerHTML =
       '📍 <b>Your local scene</b> — ' + r.market.bandLabel + '-year-old singles in ' + city + ':'
       + pictograph(lr)
       + '<div class="scene-cap">≈ <b>' + lr + ' single men per 100 single women</b> <span style="opacity:.6">(real census data)</span>. ' + sceneCap(lr) + ' ' + tilt(r.shift) + '</div>'
       + '<div class="lm-tiles">' + flipTile
-        + tile('Already taken', st.pctTaken + '%', 'of ' + st.targetWord + ' your age')
-        + tile('City rank', '#' + st.rank + '/' + st.total, (st.rank<=Math.ceil(st.total/2)?'friendlier':'tougher') + ' end for you')
-        + tile('Your standing', tierCap + ' third', 'ahead of ~' + st.elig + '% locally')
+        + tile('Spoken for', st.pctTaken + '%', 'of ' + st.targetWord + ' your age 💍')
+        + tile('City rank', '#' + st.rank + '/' + st.total, (st.rank<=Math.ceil(st.total/2)?'friendlier end 😌':'tougher end 😬'))
+        + tile('You, on paper', tierCap + ' third', 'you out-CV ~' + st.elig + '%')
       + '</div>'
       + '<div class="lm-sub">Single men per 100 single women, by age <span style="opacity:.6">(100 = even)</span>:</div>'
       + ratioSparkline(st.ratios, st.band)
@@ -1187,6 +1207,24 @@ document.getElementById('copy').addEventListener('click', ()=>{
 document.getElementById('pin').addEventListener('click', pinCurrent);
 document.getElementById('saveimg').addEventListener('click', saveImage);
 document.getElementById('clear-compare').addEventListener('click', ()=>{ PINNED=[]; renderCompare(); });
+
+// chart hover tooltip — delegated, so it works for the re-rendered chart HTML
+const lmTip = document.createElement('div'); lmTip.id = 'lm-tip'; document.body.appendChild(lmTip);
+document.addEventListener('pointermove', (e)=>{
+  const el = e.target.closest ? e.target.closest('[data-tip]') : null;
+  if (el){
+    lmTip.innerHTML = el.getAttribute('data-tip');
+    lmTip.style.opacity = '1';
+    const pad = 14, w = lmTip.offsetWidth||170, h = lmTip.offsetHeight||44;
+    let x = e.clientX + pad, y = e.clientY + pad;
+    if (x + w > innerWidth - 8)  x = e.clientX - pad - w;
+    if (y + h > innerHeight - 8) y = e.clientY - pad - h;
+    lmTip.style.left = Math.max(8, x) + 'px';
+    lmTip.style.top  = Math.max(8, y) + 'px';
+  } else if (lmTip.style.opacity === '1') {
+    lmTip.style.opacity = '0';
+  }
+}, { passive: true });
 </script>
 </body>
 </html>
