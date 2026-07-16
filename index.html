@@ -666,11 +666,12 @@ function localMarketStats(f, r){
   const bandSingle=(mm,b)=>{ let x=0; for(let s=0;s<NS;s++) x+=(mm?city.mu_i0:city.mu_0j)[b*NS+s]; return x; };
   const bandAvail =(mm,b)=>{ let x=0; for(let s=0;s<NS;s++) x+=(mm?cityData.m:cityData.f)[b*NS+s]; return x; };
   // single sex-ratio by age band, and the "flip age" (crossing 100)
-  const mids=CS.age_bands.map(a=>(a[0]+a[1])/2), ratios=[];
+  const ratios=[];
   for(let b=0;b<NB;b++){ const sm=bandSingle(true,b), sw=bandSingle(false,b); ratios.push(sw>0?100*sm/sw:100); }
-  let flip=null, flipDir=null;
-  for(let b=0;b<NB-1;b++){ const a=ratios[b]-100, c=ratios[b+1]-100;
-    if(a*c<0){ flip=Math.round(mids[b]+(a/(a-c))*(mids[b+1]-mids[b])); flipDir=a>0?'women':'men'; break; } }
+  // most favorable age band for the user (min men:women ratio if seeking women, else max).
+  // argmin/argmax — robust to the (non-monotone, often multi-peaked) ratio-by-age curve.
+  let bi=0; for(let b=1;b<NB;b++){ if(male ? ratios[b]<ratios[bi] : ratios[b]>ratios[bi]) bi=b; }
+  const bestBand=CS.age_bands[bi][0]+'–'+CS.age_bands[bi][1];
   // % of the TARGET gender already partnered, in the user's age band
   const tS=bandSingle(targetMale,band), tA=bandAvail(targetMale,band);
   const pctTaken=tA>0?Math.round(100*(1-tS/tA)):0;
@@ -687,7 +688,7 @@ function localMarketStats(f, r){
   const sesT=[]; for(let s=0;s<NS;s++) sesT.push((targetMale?city.mu_i0:city.mu_0j)[band*NS+s]);
   const totT=sesT.reduce((a,b)=>a+b,0); const comp=sesT.map(c=>totT>0?Math.round(100*c/totT):0);
   const targetWord=targetMale?'men':'women';
-  return {ratios,flip,flipDir,pctTaken,targetWord,rank,total,best,worst,elig,tierName,comp,band};
+  return {ratios,bestBand,pctTaken,targetWord,rank,total,best,worst,elig,tierName,comp,band};
 }
 // single-hue area sparkline: single sex-ratio across age bands, user's bracket marked
 function ratioSparkline(ratios, band){
@@ -1006,9 +1007,7 @@ function run(){
       : (st.worst.name===f.cityName)
         ? '🧳 Rough luck: <b>' + city + '</b> is your <b>toughest</b> US market. Friendliest would be <b>' + shortCity(st.best.name) + '</b> (' + rs(st.best.shift) + '). Just saying.'
         : '🛫 If you\'d relocate for love: friendliest is <b>' + shortCity(st.best.name) + '</b> (' + rs(st.best.shift) + '), brutal is <b>' + shortCity(st.worst.name) + '</b> (' + rs(st.worst.shift) + '). The data\'s just saying.';
-    const flipTile = st.flip
-      ? tile('Flips at age', '~' + st.flip, st.flipDir==='women' ? 'then more single women' : 'then more single men')
-      : tile('Sex ratio', st.ratios[st.band]>=100 ? 'Men-heavy' : 'Women-heavy', 'at every age here');
+    const flipTile = tile('Best odds at', st.bestBand, 'most single ' + st.targetWord + ' here');
     const tierCap = st.tierName.charAt(0).toUpperCase()+st.tierName.slice(1);
     mn.innerHTML =
       '📍 <b>Your local scene</b> — ' + r.market.bandLabel + '-year-old singles in ' + city + ':'
