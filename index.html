@@ -121,7 +121,14 @@
   details p, details li { color: #8f94bd; font-size: 13.5px; }
   .foot { text-align: center; color: #6a6f96; font-size: 12.5px; margin-top: 34px; }
   .pill-note { background: rgba(124,92,255,.1); border: 1px solid rgba(124,92,255,.3); color: #c9c4ff;
-    border-radius: 12px; padding: 10px 14px; font-size: 13px; margin-top: 16px; }
+    border-radius: 12px; padding: 12px 16px; font-size: 13px; margin-top: 16px; }
+  .scene-pic { display:flex; flex-direction:column; gap:5px; margin:12px 0 10px; }
+  .scene-row { display:flex; align-items:center; gap:10px; }
+  .scene-row .lbl { width:96px; text-align:right; font-size:11.5px; color:var(--muted); flex-shrink:0; }
+  .scene-row .icons { font-size:19px; line-height:1.25; word-break:break-all; }
+  .scene-cap { font-size:13.5px; color:var(--text); }
+  .scene-move { margin-top:11px; padding-top:10px; border-top:1px solid rgba(124,92,255,.25); font-size:13px; color:#b9b4e6; }
+  .scene-move b { color:#fff; }
   .share-row { display:flex; gap:10px; margin-top: 20px; flex-wrap: wrap; }
   .share-row button { flex:1; min-width: 140px; background:#14152b; border:1px solid var(--line); color:var(--text);
     padding: 12px; border-radius: 12px; cursor:pointer; font-weight:600; font-size:14px; }
@@ -615,6 +622,20 @@ function marketAdjustCS(f, incomeSub, eduSub){
   const bandLabel = CS.age_bands[band][0]+'–'+CS.age_bands[band][1];
   return { model:'choosiow', shift, band, sbin, baseRate, cityRate, localRatio, bandLabel };
 }
+// market shift for any metro's supply (for the "best/worst US city" ranking)
+function csBandShift(band, male, cityData){
+  const NS=CS.nses, base=csBaseline(), city=csSolve(CS.pi, cityData.m, cityData.f);
+  let db=0, dc=0;
+  for(let s=0;s<NS;s++){ const t=band*NS+s;
+    if(male){ db+=base.mu_i0[t]/CS.m_nat[t]; dc+=city.mu_i0[t]/cityData.m[t]; }
+    else    { db+=base.mu_0j[t]/CS.f_nat[t]; dc+=city.mu_0j[t]/cityData.f[t]; } }
+  return clamp(-CS.K*((dc-db)/NS), -MODEL.marketMaxShift, MODEL.marketMaxShift);
+}
+function cityRanking(band, male){
+  const arr = Object.keys(CS.metros).map(name=>({ name, shift: csBandShift(band, male, CS.metros[name]) }));
+  arr.sort((a,b)=>b.shift-a.shift);
+  return { best: arr[0], worst: arr[arr.length-1] };
+}
 
 const TIERS = [
   [96, "Federally Regulated Hottie", "So attractive it's basically a public-safety issue — the FDA wants a word. Please date responsibly."],
@@ -859,28 +880,56 @@ function run(){
   const mn = document.getElementById('market-note');
   const city = shortCity(f.cityName);
   const sh = Math.round(r.shift);
+  // emoji pictograph of the local single sex-ratio (longer side = 10 figures)
+  function pictograph(ratio){
+    let mI, wI;
+    if (ratio>=100){ mI=10; wI=Math.max(1,Math.round(1000/ratio)); }
+    else { wI=10; mI=Math.max(1,Math.round(ratio/10)); }
+    return '<div class="scene-pic">'
+      + '<div class="scene-row"><span class="lbl">single men</span><span class="icons">' + '👨'.repeat(mI) + '</span></div>'
+      + '<div class="scene-row"><span class="lbl">single women</span><span class="icons">' + '👩'.repeat(wI) + '</span></div>'
+      + '</div>';
+  }
+  function sceneCap(ratio){
+    if (ratio>=120) return 'Heavily men-skewed — proper tech-hub energy. 👨‍💻';
+    if (ratio>=108) return 'Noticeably more single men than women around here.';
+    if (ratio>92)   return 'A pretty even split — may the best banter win.';
+    if (ratio>80)   return 'Noticeably more single women than men around here.';
+    return 'Strongly women-skewed — men are the scarce commodity here.';
+  }
   const tilt = (s)=> s>=1.5 ? 'That imbalance quietly tilts things your way. 😌'
-                   : s<=-1.5 ? 'Translation: a bit more competition on your side — bring your A-game. 💪'
+                   : s<=-1.5 ? 'A bit more competition on your side — bring your A-game. 💪'
                    : 'Pretty balanced for you, honestly.';
   if (r.market && r.market.model==='choosiow'){
     const bp=Math.round(r.market.baseRate*100), cp=Math.round(r.market.cityRate*100);
     const lr = Math.round(r.market.localRatio);
     const detail = sh===0
-      ? 'Choo–Siow equilibrium: right on par with the national average (' + cp + '% single here vs ' + bp + '%), so no net adjustment.'
-      : 'Choo–Siow equilibrium: people of your age &amp; gender are predicted <b>' + cp + '% single</b> here vs ' + bp + '% nationally — a ' + (sh>0?'friendlier':'tougher') + ' market for you, <b>' + (sh>0?'+':'') + sh + '</b> pts.';
-    mn.innerHTML = '📍 <b>Your local scene</b> — among ' + r.market.bandLabel + '-year-old singles in ' + city +
-      ', there are about <b>' + lr + ' single men per 100 single women</b> <span style="opacity:.7">(real census data)</span>. ' + tilt(r.shift) +
-      '<br><span style="opacity:.8;font-size:.94em">' + detail + '</span>';
+      ? 'right on par with the national average (' + cp + '% single here vs ' + bp + '%) — no net adjustment'
+      : 'predicted <b>' + cp + '% single</b> here vs ' + bp + '% nationally — a ' + (sh>0?'friendlier':'tougher') + ' market for you, <b>' + (sh>0?'+':'') + sh + '</b> pts';
+    const rank = cityRanking(r.market.band, f.gender==='male');
+    const rs = (x)=> (x>=0?'+':'') + Math.round(x);
+    const move = (rank.best.name===city)
+      ? '🛫 Good news: <b>' + city + '</b> is statistically your <b>friendliest</b> US market. Stay put.'
+      : (rank.worst.name===city)
+        ? '🧳 Rough luck: <b>' + city + '</b> is your <b>toughest</b> US market. Friendliest would be <b>' + shortCity(rank.best.name) + '</b> (' + rs(rank.best.shift) + '). Just saying.'
+        : '🛫 If you\'d relocate for love: friendliest is <b>' + shortCity(rank.best.name) + '</b> (' + rs(rank.best.shift) + '), brutal is <b>' + shortCity(rank.worst.name) + '</b> (' + rs(rank.worst.shift) + '). The data\'s just saying.';
+    mn.innerHTML =
+      '📍 <b>Your local scene</b> — ' + r.market.bandLabel + '-year-old singles in ' + city + ':'
+      + pictograph(lr)
+      + '<div class="scene-cap">≈ <b>' + lr + ' single men per 100 single women</b> <span style="opacity:.6">(real census data)</span>. ' + sceneCap(lr) + ' ' + tilt(r.shift) + '</div>'
+      + '<div class="scene-move"><span style="opacity:.85">Choo–Siow equilibrium: your age &amp; gender are ' + detail + '.</span><br>' + move + '</div>';
   } else {
     // sex-ratio model (international / same-sex / "everyone")
     const lr = Math.round(r.ratio);
-    const comp = Math.abs(lr-100)<2 ? 'a fairly even split (~' + lr + ' single men per 100 single women)'
-                                    : 'about <b>' + lr + ' single men per 100 single women</b> <span style="opacity:.7">(estimate)</span>';
     let effect;
     if (Math.abs(r.shift) < 0.6) effect = 'No notable tilt for you here.';
     else if (r.shift>0) effect = 'Your gender is the <b>scarcer</b> side — worth <b>+' + sh + '</b> pts to you.';
-    else effect = 'It\'s a <b>crowded</b> field on your side — <b>' + sh + '</b> pts.';
-    mn.innerHTML = '📍 <b>Your local scene</b> — in ' + city + ', ' + comp + '. ' + effect;
+    else effect = 'A <b>crowded</b> field on your side — <b>' + sh + '</b> pts.';
+    mn.innerHTML =
+      '📍 <b>Your local scene</b> — singles in ' + city + ':'
+      + pictograph(lr)
+      + '<div class="scene-cap">≈ <b>' + lr + ' single men per 100 single women</b> <span style="opacity:.6">(estimate)</span>. ' + sceneCap(lr) + '</div>'
+      + '<div class="scene-move">' + effect + '</div>';
   }
 
   const res = document.getElementById('results');
