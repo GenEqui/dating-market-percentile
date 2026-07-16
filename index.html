@@ -129,6 +129,18 @@
   .scene-cap { font-size:13.5px; color:var(--text); }
   .scene-move { margin-top:11px; padding-top:10px; border-top:1px solid rgba(124,92,255,.25); font-size:13px; color:#b9b4e6; }
   .scene-move b { color:#fff; }
+  .lm-tiles { display:grid; grid-template-columns:repeat(4,1fr); gap:9px; margin:13px 0 4px; }
+  @media (max-width:600px){ .lm-tiles{ grid-template-columns:repeat(2,1fr); } }
+  .lm-tile { background:#14152b; border:1px solid var(--line); border-radius:11px; padding:9px 11px; }
+  .lm-tile .k { font-size:10px; text-transform:uppercase; letter-spacing:.8px; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .lm-tile .v { font-size:20px; font-weight:800; color:#fff; line-height:1.05; margin:3px 0 2px; font-variant-numeric:tabular-nums; }
+  .lm-tile .s { font-size:10.5px; color:#8f94bd; line-height:1.25; }
+  .lm-sub { font-size:11px; color:var(--muted); margin:12px 0 2px; }
+  .lm-spark { display:block; margin:2px 0 6px; }
+  .lm-comp { margin:8px 0 2px; }
+  .lm-comp .bar { display:flex; height:22px; border-radius:6px; overflow:hidden; gap:2px; }
+  .lm-comp .seg { display:flex; align-items:center; justify-content:center; font-size:10.5px; font-weight:700; color:#fff; min-width:0; }
+  .lm-comp .cap { font-size:11.5px; color:var(--muted); margin-top:6px; }
   .share-row { display:flex; gap:10px; margin-top: 20px; flex-wrap: wrap; }
   .share-row button { flex:1; min-width: 140px; background:#14152b; border:1px solid var(--line); color:var(--text);
     padding: 12px; border-radius: 12px; cursor:pointer; font-weight:600; font-size:14px; }
@@ -636,6 +648,67 @@ function cityRanking(band, male){
   arr.sort((a,b)=>b.shift-a.shift);
   return { best: arr[0], worst: arr[arr.length-1] };
 }
+function tile(k,v,s){ return '<div class="lm-tile"><div class="k">'+k+'</div><div class="v">'+v+'</div><div class="s">'+s+'</div></div>'; }
+
+// full local-market dashboard stats (US opposite-sex daters)
+function localMarketStats(f, r){
+  const cityData = CS.metros[f.cityName];
+  const NS=CS.nses, NB=CS.age_bands.length, male=f.gender==='male', targetMale=(f.target==='men');
+  const city = csSolve(CS.pi, cityData.m, cityData.f);
+  const band=r.market.band, sbin=r.market.sbin;
+  const bandSingle=(mm,b)=>{ let x=0; for(let s=0;s<NS;s++) x+=(mm?city.mu_i0:city.mu_0j)[b*NS+s]; return x; };
+  const bandAvail =(mm,b)=>{ let x=0; for(let s=0;s<NS;s++) x+=(mm?cityData.m:cityData.f)[b*NS+s]; return x; };
+  // single sex-ratio by age band, and the "flip age" (crossing 100)
+  const mids=CS.age_bands.map(a=>(a[0]+a[1])/2), ratios=[];
+  for(let b=0;b<NB;b++){ const sm=bandSingle(true,b), sw=bandSingle(false,b); ratios.push(sw>0?100*sm/sw:100); }
+  let flip=null, flipDir=null;
+  for(let b=0;b<NB-1;b++){ const a=ratios[b]-100, c=ratios[b+1]-100;
+    if(a*c<0){ flip=Math.round(mids[b]+(a/(a-c))*(mids[b+1]-mids[b])); flipDir=a>0?'women':'men'; break; } }
+  // % of the TARGET gender already partnered, in the user's age band
+  const tS=bandSingle(targetMale,band), tA=bandAvail(targetMale,band);
+  const pctTaken=tA>0?Math.round(100*(1-tS/tA)):0;
+  // national favorability rank + best/worst
+  const arr=Object.keys(CS.metros).map(n=>({n, s:csBandShift(band,male,CS.metros[n])})); arr.sort((a,b)=>b.s-a.s);
+  const rank=arr.findIndex(x=>x.n===f.cityName)+1, total=arr.length;
+  const best={name:arr[0].n,shift:arr[0].s}, worst={name:arr[total-1].n,shift:arr[total-1].s};
+  // eligibility: user's SES tier vs same-gender local singles in band
+  const sesU=[]; for(let s=0;s<NS;s++) sesU.push((male?city.mu_i0:city.mu_0j)[band*NS+s]);
+  const totU=sesU.reduce((a,b)=>a+b,0); let below=0; for(let s=0;s<sbin;s++) below+=sesU[s];
+  const elig=totU>0?Math.round(100*(below+sesU[sbin]/2)/totU):50;
+  const tierName=['lower','middle','top'][sbin];
+  // SES makeup of single TARGET-gender in band (index 0=lower,1=mid,2=top)
+  const sesT=[]; for(let s=0;s<NS;s++) sesT.push((targetMale?city.mu_i0:city.mu_0j)[band*NS+s]);
+  const totT=sesT.reduce((a,b)=>a+b,0); const comp=sesT.map(c=>totT>0?Math.round(100*c/totT):0);
+  const targetWord=targetMale?'men':'women';
+  return {ratios,flip,flipDir,pctTaken,targetWord,rank,total,best,worst,elig,tierName,comp,band};
+}
+// single-hue area sparkline: single sex-ratio across age bands, user's bracket marked
+function ratioSparkline(ratios, band){
+  const W=600,H=56,pad=10,n=ratios.length;
+  const lo=Math.min(80,...ratios)-4, hi=Math.max(120,...ratios)+4;
+  const X=i=>pad+i*(W-2*pad)/(n-1), Y=r=>(H-16)-((r-lo)/(hi-lo))*(H-26);
+  let line='',area='M '+X(0).toFixed(1)+' '+(H-16)+' ';
+  ratios.forEach((r,i)=>{ const x=X(i).toFixed(1),y=Y(r).toFixed(1); line+=(i?'L':'M')+x+' '+y+' '; area+='L '+x+' '+y+' '; });
+  area+='L '+X(n-1).toFixed(1)+' '+(H-16)+' Z';
+  const y100=Y(100).toFixed(1), ux=X(band).toFixed(1), uy=Y(ratios[band]).toFixed(1);
+  return '<svg class="lm-spark" viewBox="0 0 '+W+' '+H+'" width="100%" preserveAspectRatio="xMidYMid meet">'
+    +'<defs><linearGradient id="spk" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#7c5cff" stop-opacity=".4"/><stop offset="1" stop-color="#7c5cff" stop-opacity="0"/></linearGradient></defs>'
+    +'<line x1="'+pad+'" y1="'+y100+'" x2="'+(W-pad)+'" y2="'+y100+'" stroke="#565b85" stroke-width="1" stroke-dasharray="4 4"/>'
+    +'<text x="'+(W-pad)+'" y="'+(+y100-4)+'" fill="#6a6f96" font-size="10" text-anchor="end">even</text>'
+    +'<path d="'+area+'" fill="url(#spk)"/><path d="'+line+'" fill="none" stroke="#c9c4ff" stroke-width="2"/>'
+    +'<circle cx="'+ux+'" cy="'+uy+'" r="4.5" fill="#ff5c8a" stroke="#fff" stroke-width="1.5"/>'
+    +'<text x="'+ux+'" y="'+(+uy-9)+'" fill="#ff8fb0" font-size="10" font-weight="700" text-anchor="middle">you</text>'
+    +'<text x="'+X(0)+'" y="'+(H-3)+'" fill="#6a6f96" font-size="10">age '+CS.age_bands[0][0]+'</text>'
+    +'<text x="'+(W-pad)+'" y="'+(H-3)+'" fill="#6a6f96" font-size="10" text-anchor="end">'+CS.age_bands[n-1][1]+'</text></svg>';
+}
+// sequential stacked bar: SES makeup of the single target pool (top → lower)
+function compBar(comp, targetWord){
+  const col=['#33356a','#6a5acd','#8f7aff'];   // sequential purple ramp, lower→top
+  let segs='';
+  for(let i=2;i>=0;i--){ if(comp[i]<=0) continue; segs+='<div class="seg" style="flex:'+comp[i]+';background:'+col[i]+'">'+(comp[i]>=12?comp[i]+'%':'')+'</div>'; }
+  return '<div class="lm-comp"><div class="bar">'+segs+'</div>'
+    +'<div class="cap">SES makeup of single '+targetWord+' your age: <b style="color:#c9c4ff">'+comp[2]+'% top</b> · '+comp[1]+'% mid · '+comp[0]+'% lower <span style="opacity:.6">(income + education)</span></div></div>';
+}
 
 const TIERS = [
   [96, "Federally Regulated Hottie", "So attractive it's basically a public-safety issue — the FDA wants a word. Please date responsibly."],
@@ -906,17 +979,29 @@ function run(){
     const detail = sh===0
       ? 'right on par with the national average (' + cp + '% single here vs ' + bp + '%) — no net adjustment'
       : 'predicted <b>' + cp + '% single</b> here vs ' + bp + '% nationally — a ' + (sh>0?'friendlier':'tougher') + ' market for you, <b>' + (sh>0?'+':'') + sh + '</b> pts';
-    const rank = cityRanking(r.market.band, f.gender==='male');
+    const st = localMarketStats(f, r);
     const rs = (x)=> (x>=0?'+':'') + Math.round(x);
-    const move = (rank.best.name===city)
+    const move = (st.best.name===f.cityName)
       ? '🛫 Good news: <b>' + city + '</b> is statistically your <b>friendliest</b> US market. Stay put.'
-      : (rank.worst.name===city)
-        ? '🧳 Rough luck: <b>' + city + '</b> is your <b>toughest</b> US market. Friendliest would be <b>' + shortCity(rank.best.name) + '</b> (' + rs(rank.best.shift) + '). Just saying.'
-        : '🛫 If you\'d relocate for love: friendliest is <b>' + shortCity(rank.best.name) + '</b> (' + rs(rank.best.shift) + '), brutal is <b>' + shortCity(rank.worst.name) + '</b> (' + rs(rank.worst.shift) + '). The data\'s just saying.';
+      : (st.worst.name===f.cityName)
+        ? '🧳 Rough luck: <b>' + city + '</b> is your <b>toughest</b> US market. Friendliest would be <b>' + shortCity(st.best.name) + '</b> (' + rs(st.best.shift) + '). Just saying.'
+        : '🛫 If you\'d relocate for love: friendliest is <b>' + shortCity(st.best.name) + '</b> (' + rs(st.best.shift) + '), brutal is <b>' + shortCity(st.worst.name) + '</b> (' + rs(st.worst.shift) + '). The data\'s just saying.';
+    const flipTile = st.flip
+      ? tile('Market flips at', '~' + st.flip, 'tips ' + st.flipDir + '-heavy after')
+      : tile('Sex ratio', st.ratios[st.band]>=100 ? 'Men-heavy' : 'Women-heavy', 'at every age here');
+    const tierCap = st.tierName.charAt(0).toUpperCase()+st.tierName.slice(1);
     mn.innerHTML =
       '📍 <b>Your local scene</b> — ' + r.market.bandLabel + '-year-old singles in ' + city + ':'
       + pictograph(lr)
       + '<div class="scene-cap">≈ <b>' + lr + ' single men per 100 single women</b> <span style="opacity:.6">(real census data)</span>. ' + sceneCap(lr) + ' ' + tilt(r.shift) + '</div>'
+      + '<div class="lm-tiles">' + flipTile
+        + tile('Already taken', st.pctTaken + '%', 'of ' + st.targetWord + ' your age')
+        + tile('City rank', '#' + st.rank + '/' + st.total, (st.rank<=Math.ceil(st.total/2)?'friendlier':'tougher') + ' end for you')
+        + tile('Your standing', tierCap + ' third', 'ahead of ~' + st.elig + '% locally')
+      + '</div>'
+      + '<div class="lm-sub">Single men per 100 single women, by age <span style="opacity:.6">(100 = even)</span>:</div>'
+      + ratioSparkline(st.ratios, st.band)
+      + compBar(st.comp, st.targetWord)
       + '<div class="scene-move"><span style="opacity:.85">Choo–Siow equilibrium: your age &amp; gender are ' + detail + '.</span><br>' + move + '</div>';
   } else {
     // sex-ratio model (international / same-sex / "everyone")
