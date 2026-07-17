@@ -148,6 +148,12 @@
     padding:7px 10px; border-radius:9px; max-width:240px; box-shadow:0 10px 30px rgba(0,0,0,.55); }
   #lm-tip b { color:#fff; }
   .lm-help { cursor:help; text-decoration:underline dotted; text-underline-offset:2px; }
+  .matches { margin-top:16px; background:rgba(255,92,138,.07); border:1px solid rgba(255,92,138,.28); border-radius:14px; padding:14px 16px; }
+  .matches-h { font-size:13px; font-weight:700; color:#ffb3c9; margin-bottom:10px; }
+  .match-row { display:grid; grid-template-columns:1fr 110px; align-items:center; gap:12px; margin:8px 0; font-size:13.5px; color:var(--text); }
+  .match-row .mbar { height:8px; background:#14152b; border-radius:99px; overflow:hidden; }
+  .match-row .mbar i { display:block; height:100%; border-radius:99px; background:linear-gradient(90deg,var(--accent2),var(--accent)); transition:width .6s ease; }
+  .matches-sum { font-size:13px; color:var(--muted); margin-top:10px; padding-top:9px; border-top:1px solid rgba(255,92,138,.2); }
   .share-row { display:flex; gap:10px; margin-top: 20px; flex-wrap: wrap; }
   .share-row button { flex:1; min-width: 140px; background:#14152b; border:1px solid var(--line); color:var(--text);
     padding: 12px; border-radius: 12px; cursor:pointer; font-weight:600; font-size:14px; }
@@ -437,6 +443,8 @@
 
     <div class="pill-note" id="market-note"></div>
 
+    <div class="matches" id="matches" style="display:none"></div>
+
     <div class="share-row">
       <button id="recalc">↺ Adjust answers</button>
       <button id="pin">📌 Pin to compare</button>
@@ -614,6 +622,52 @@ function csSolve(pi, m, f){
 }
 let CS_BASE=null;
 function csBaseline(){ if(!CS_BASE) CS_BASE=csSolve(CS.pi, CS.m_nat, CS.f_nat); return CS_BASE; }
+// national equilibrium WITH the full marriage matrix mu_ij (cached) — for "who values you"
+let CS_NATFULL=null;
+function csNationalFull(){
+  if(CS_NATFULL) return CS_NATFULL;
+  const base=csBaseline(), K=CS.pi.map(r=>r.map(Math.exp));
+  const a=base.mu_i0.map(Math.sqrt), b=base.mu_0j.map(Math.sqrt);
+  const mu_ij=a.map((ai,i)=>b.map((bj,j)=>ai*bj*K[i][j]));
+  CS_NATFULL={mu_ij, mu_i0:base.mu_i0, mu_0j:base.mu_0j};
+  return CS_NATFULL;
+}
+// Which partner TYPES (age × SES tier) value the user's type most.
+// Directional net gain (Choo-Siow eq 12): user man i -> N_ij = ln(mu_ij/mu_0j) is woman-type j's
+// net systematic gain from him; user woman j -> n_ij = ln(mu_ij/mu_i0) is man-type i's from her.
+function renderMatches(f, r){
+  const el = document.getElementById('matches');
+  const opp = (f.gender==='male'&&f.target==='women')||(f.gender==='female'&&f.target==='men');
+  if (!opp || !CS.metros){ el.style.display='none'; return; }
+  const male=f.gender==='male', NS=CS.nses, NB=CS.age_bands.length, NT=CS.ntypes;
+  const w = male?CS.weights_men:CS.weights_women;
+  const idx = w.income*r.sub.income + w.education*r.sub.education;
+  const edges = male?CS.ses_edges_men:CS.ses_edges_women;
+  let sbin=0; while(sbin<edges.length && idx>edges[sbin]) sbin++;
+  let band=NB-1; for(let b=0;b<NB;b++){ if(f.age<=CS.age_bands[b][1]){ band=b; break; } }
+  const t=band*NS+sbin, nat=csNationalFull(), mu=nat.mu_ij, mi0=nat.mu_i0, m0j=nat.mu_0j;
+  const vals=[];
+  for(let k=0;k<NT;k++){
+    const v = male ? Math.log(mu[t][k]/m0j[k]) : Math.log(mu[k][t]/mi0[k]);
+    vals.push({k, v, band:Math.floor(k/NS), sbin:k%NS});
+  }
+  vals.sort((a,b)=>b.v-a.v);
+  const top=vals.slice(0,3), vmax=top[0].v; top.forEach(x=>x.pull=Math.exp(x.v-vmax));
+  const tierName=['lower','mid','top'], partner=male?'Women':'Men';
+  const rows = top.map(x=>{
+    const ageL=CS.age_bands[x.band][0]+'–'+CS.age_bands[x.band][1];
+    return '<div class="match-row"><span class="ml">'+partner+' '+ageL+', '+tierName[x.sbin]+'-tier</span>'
+      +'<span class="mbar"><i style="width:'+Math.round(100*x.pull)+'%"></i></span></div>';
+  }).join('');
+  let ws=0,ab=0,at=0; top.forEach(x=>{ws+=x.pull;ab+=x.pull*x.band;at+=x.pull*x.sbin;}); ab/=ws; at/=ws;
+  const dAge=ab-band, dSes=at-sbin;
+  const ageP = dAge<-0.4?'a little younger than you':dAge>0.4?'a little older than you':'around your age';
+  const sesP = dSes>0.4?', especially higher earners/degrees':dSes<-0.4?', leaning lower on income + education':', with similar backgrounds';
+  const help='From the estimated Choo–Siow gains: the partner types (age band × income-education tier) that get the biggest gain from matching with your type — i.e. who values you most. Estimated on real US census matching data.';
+  el.style.display='block';
+  el.innerHTML = '<div class="matches-h">💘 Who values your type most <span class="lm-help" data-tip="'+help+'">what\'s this?</span></div>'
+    + rows + '<div class="matches-sum">In short: '+(male?'women':'men')+' '+ageP+sesP+'.</div>';
+}
 
 // Choo-Siow market adjustment for a US opposite-sex dater, read at the age-band level.
 function marketAdjustCS(f, incomeSub, eduSub){
@@ -1035,6 +1089,8 @@ function run(){
       + '<div class="scene-cap">≈ <b>' + lr + ' single men per 100 single women</b> <span style="opacity:.6">(estimate)</span>. ' + sceneCap(lr) + '</div>'
       + '<div class="scene-move">' + effect + '</div>';
   }
+
+  renderMatches(f, r);
 
   const res = document.getElementById('results');
   res.classList.add('show');
