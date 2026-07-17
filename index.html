@@ -1254,20 +1254,33 @@ function saveImage(){
   x.fillText("Am I hot, or just in a good market?", W/2, 960);
   x.fillStyle='#a8899a'; x.font='400 24px -apple-system,Segoe UI,Roboto,sans-serif';
   x.fillText('just for fun · not a judgment of anyone', W/2, 1005);
-  // download via Blob + object URL (robust across browsers, esp. Safari & large images)
-  const finish = (url, revoke)=>{
+  // download to disk (desktop / fallback)
+  const downloadBlob = (blob)=>{
+    const url = URL.createObjectURL(blob);
     const a=document.createElement('a'); a.href=url; a.download='my-dating-percentile.png';
     a.rel='noopener'; document.body.appendChild(a); a.click(); document.body.removeChild(a);
-    if(revoke) setTimeout(()=>URL.revokeObjectURL(url), 2000);
+    setTimeout(()=>URL.revokeObjectURL(url), 2000);
   };
-  if (c.toBlob){
-    c.toBlob(function(blob){
-      if(!blob){ finish(c.toDataURL('image/png'), false); return; }         // fallback if toBlob yields null
-      finish(URL.createObjectURL(blob), true);
-    }, 'image/png');
-  } else {
-    finish(c.toDataURL('image/png'), false);                                 // very old browsers
-  }
+  // Build the PNG blob SYNCHRONOUSLY so the user-gesture stays valid for navigator.share on iOS.
+  let blob=null;
+  try {
+    const b64 = c.toDataURL('image/png').split(',')[1];
+    const bin = atob(b64), arr = new Uint8Array(bin.length);
+    for(let i=0;i<bin.length;i++) arr[i]=bin.charCodeAt(i);
+    blob = new Blob([arr], {type:'image/png'});
+  } catch(e){ /* leave blob null */ }
+  if(!blob){ if(c.toBlob) c.toBlob(b=>{ if(b) downloadBlob(b); }, 'image/png'); return; }
+
+  // On phones: open the native share sheet. Its "Save Image" saves straight to the Photos library.
+  try {
+    const file = new File([blob], 'my-dating-percentile.png', {type:'image/png'});
+    if (navigator.canShare && navigator.canShare({files:[file]})){
+      navigator.share({ files:[file], title:'Am I hot, or just in a good market?' })
+        .catch(err=>{ if(!(err && err.name==='AbortError')) downloadBlob(blob); });  // ignore user-cancel; else download
+      return;
+    }
+  } catch(e){ /* fall through to download */ }
+  downloadBlob(blob);
 }
 
 /* ---------- wiring ---------- */
