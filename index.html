@@ -644,9 +644,18 @@ function csNationalFull(){
 // net systematic gain from him; user woman j -> n_ij = ln(mu_ij/mu_i0) is man-type i's from her.
 function renderMatches(f, r){
   const el = document.getElementById('matches');
-  const opp = (f.gender==='male'&&f.target==='women')||(f.gender==='female'&&f.target==='men');
-  if (!opp || !CS.metros){ el.style.display='none'; return; }
-  const male=f.gender==='male', NS=CS.nses, NB=CS.age_bands.length, NT=CS.ntypes;
+  if (!CS.metros){ el.style.display='none'; return; }
+  const male = f.gender==='male';
+  const sameSexOnly = male ? f.target==='men' : f.target==='women';
+  const wantsOpp = male ? (f.target==='women'||f.target==='everyone') : (f.target==='men'||f.target==='everyone');
+  if (sameSexOnly){
+    el.style.display='block';
+    el.innerHTML = '<div class="matches-h">💘 Who values your type most</div>'
+      + '<div class="matches-sum" style="border-top:none;margin-top:4px;padding-top:0">This one is estimated from <b>opposite-sex</b> census matching data, so it isn\'t available for same-sex preferences.</div>';
+    return;
+  }
+  if (!wantsOpp){ el.style.display='none'; return; }
+  const NS=CS.nses, NB=CS.age_bands.length, NT=CS.ntypes;
   const w = male?CS.weights_men:CS.weights_women;
   const idx = w.income*r.sub.income + w.education*r.sub.education;
   const edges = male?CS.ses_edges_men:CS.ses_edges_women;
@@ -690,7 +699,8 @@ function renderMatches(f, r){
   const sesP = dSes>0.4?', especially the high-achieving ones':dSes<-0.4?', across income levels':', with similar backgrounds';
   const help='From the estimated Choo–Siow gains: the partner types (age band × income-education tier) that get the biggest gain from matching with your type — i.e. who values you most. Estimated on real US census matching data.';
   el.style.display='block';
-  el.innerHTML = '<div class="matches-h">💘 Who values your type most <span class="lm-help" data-tip="'+help+'">what\'s this?</span></div>'
+  const oppNote = f.target==='everyone' ? ' <span style="opacity:.65;font-weight:400;font-size:.85em">(among '+pw+')</span>' : '';
+  el.innerHTML = '<div class="matches-h">💘 Who values your type most'+oppNote+' <span class="lm-help" data-tip="'+help+'">what\'s this?</span></div>'
     + rows
     + '<div class="matches-sum">In short: '+pw+' '+ageP+sesP+'.</div>'
     + '<div class="hm-lab">Full grid — brighter = values your type more <span style="opacity:.6">(rows: their age · columns: their income + education tier)</span></div>'
