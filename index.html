@@ -1254,7 +1254,20 @@ function saveImage(){
   x.fillText("Am I hot, or just in a good market?", W/2, 960);
   x.fillStyle='#a8899a'; x.font='400 24px -apple-system,Segoe UI,Roboto,sans-serif';
   x.fillText('just for fun · not a judgment of anyone', W/2, 1005);
-  const a=document.createElement('a'); a.href=c.toDataURL('image/png'); a.download='my-dating-percentile.png'; a.click();
+  // download via Blob + object URL (robust across browsers, esp. Safari & large images)
+  const finish = (url, revoke)=>{
+    const a=document.createElement('a'); a.href=url; a.download='my-dating-percentile.png';
+    a.rel='noopener'; document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    if(revoke) setTimeout(()=>URL.revokeObjectURL(url), 2000);
+  };
+  if (c.toBlob){
+    c.toBlob(function(blob){
+      if(!blob){ finish(c.toDataURL('image/png'), false); return; }         // fallback if toBlob yields null
+      finish(URL.createObjectURL(blob), true);
+    }, 'image/png');
+  } else {
+    finish(c.toDataURL('image/png'), false);                                 // very old browsers
+  }
 }
 
 /* ---------- wiring ---------- */
