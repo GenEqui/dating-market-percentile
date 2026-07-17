@@ -1216,11 +1216,33 @@ function renderCompare(){
   cols.innerHTML = html;
 }
 
+// top partner types for the share card (friendly label + relative pull); null for same-sex / no data
+function topMatchesForCard(f, r){
+  const male = f.gender==='male';
+  const sameSex = male ? f.target==='men' : f.target==='women';
+  if (sameSex || !CS.metros) return null;
+  const NS=CS.nses, NB=CS.age_bands.length, NT=CS.ntypes;
+  const w = male?CS.weights_men:CS.weights_women;
+  const idx = w.income*r.sub.income + w.education*r.sub.education;
+  const edges = male?CS.ses_edges_men:CS.ses_edges_women;
+  let sbin=0; while(sbin<edges.length && idx>edges[sbin]) sbin++;
+  let band=NB-1; for(let b=0;b<NB;b++){ if(f.age<=CS.age_bands[b][1]){ band=b; break; } }
+  const t=band*NS+sbin, nat=csNationalFull(), mu=nat.mu_ij, mi0=nat.mu_i0, m0j=nat.mu_0j;
+  const vals=[];
+  for(let k=0;k<NT;k++){ const v = male ? Math.log(mu[t][k]/m0j[k]) : Math.log(mu[k][t]/mi0[k]); vals.push({v,band:Math.floor(k/NS),sbin:k%NS}); }
+  vals.sort((a,b)=>b.v-a.v);
+  const top=vals.slice(0,3), vmax=top[0].v;
+  const sesAdj=['down-to-earth','mid-range','high-achieving'], pw=male?'women':'men';
+  const ageDesc=(b)=>{ const d=b-band; return d<=-2?'notably younger':d===-1?'a bit younger':d===0?'around your age':d===1?'a bit older':'notably older'; };
+  return top.map(m=>({ label: sesAdj[m.sbin].charAt(0).toUpperCase()+sesAdj[m.sbin].slice(1)+' '+pw+', '+ageDesc(m.band), pull: Math.exp(m.v-vmax) }));
+}
+
 /* ---------- save result as an image (user-initiated download) ---------- */
 function saveImage(){
   if (!LAST) return;
   const {f,r} = LAST; const tier = tierFor(r.pct);
-  const W=1080, H=1460, c=document.createElement('canvas'); c.width=W; c.height=H;
+  const cardMatches = topMatchesForCard(f, r);
+  const W=1080, H=cardMatches?1700:1460, c=document.createElement('canvas'); c.width=W; c.height=H;
   const x=c.getContext('2d');
   const rr=(x0,y0,w,h,rad)=>{ const q=Math.min(rad,h/2,w/2); x.beginPath(); x.moveTo(x0+q,y0);
     x.arcTo(x0+w,y0,x0+w,y0+h,q); x.arcTo(x0+w,y0+h,x0,y0+h,q); x.arcTo(x0,y0+h,x0,y0,q); x.arcTo(x0,y0,x0+w,y0,q); x.closePath(); };
@@ -1272,6 +1294,19 @@ function saveImage(){
   }
   x.fillStyle='#4a2b39'; x.font=F('600','30'); x.fillText(line1, W/2, y2+48);
   x.fillStyle='#9c7885'; x.font=F('400','26'); x.fillText(line2, W/2, y2+88);
+  // --- who likes you most ---
+  if(cardMatches && cardMatches.length){
+    const ym=y2+150;
+    x.textAlign='center'; x.fillStyle='#ec4c86'; x.font=F('700','26'); x.fillText('WHO LIKES YOU MOST', W/2, ym);
+    const mbx=690, mbw=270;
+    cardMatches.forEach((m,i)=>{
+      const yy=ym+52+i*46;
+      x.textAlign='left'; x.fillStyle='#4a2b39'; x.font=F('600','27'); x.fillText(m.label, 120, yy+6);
+      x.fillStyle='#f2d3de'; rr(mbx, yy-12, mbw, 16, 8); x.fill();
+      const mg=x.createLinearGradient(mbx,0,mbx+mbw,0); mg.addColorStop(0,'#b25fd6'); mg.addColorStop(1,'#ec4c86');
+      x.fillStyle=mg; rr(mbx, yy-12, Math.max(12, mbw*m.pull), 16, 8); x.fill();
+    });
+  }
   // --- footer ---
   x.fillStyle='#ab8a96'; x.font=F('500','30'); x.fillText('Am I hot, or just in a good market?', W/2, H-64);
   x.fillStyle='#a8899a'; x.font=F('400','24'); x.fillText('just for fun · not a judgment of anyone', W/2, H-28);
