@@ -6,25 +6,25 @@
 <title>Marked to Market — Am I Hot, or Just in a Good Market?</title>
 <style>
   :root {
-    --bg: #0f1020;
-    --bg2: #16172e;
-    --card: #1c1e3a;
-    --card2: #23264a;
-    --line: #2f3358;
-    --text: #eef0ff;
-    --muted: #a3a8cf;
-    --accent: #ff5c8a;
-    --accent2: #7c5cff;
-    --good: #35d0a5;
-    --bad: #ff6b6b;
-    --shadow: 0 20px 60px rgba(0,0,0,0.45);
+    --bg: #fbeaf0;
+    --bg2: #f7dfe9;
+    --card: #fffbfd;
+    --card2: #fdf1f6;
+    --line: #f0cfdc;
+    --text: #4a2b39;
+    --muted: #9c7885;
+    --accent: #ec4c86;
+    --accent2: #b25fd6;
+    --good: #17b58a;
+    --bad: #e0576e;
+    --shadow: 0 18px 50px rgba(214,120,160,0.26);
   }
   * { box-sizing: border-box; }
   html, body { margin: 0; padding: 0; }
   body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, sans-serif;
-    background: radial-gradient(1200px 700px at 80% -10%, #2a1a44 0%, transparent 55%),
-                radial-gradient(1000px 600px at -10% 10%, #1a2a4a 0%, transparent 50%),
+    background: radial-gradient(1200px 700px at 80% -10%, #ffdcec 0%, transparent 55%),
+                radial-gradient(1000px 600px at -10% 10%, #ffe6da 0%, transparent 50%),
                 var(--bg);
     color: var(--text);
     line-height: 1.5;
@@ -38,11 +38,11 @@
   }
   h1 {
     font-size: clamp(30px, 6vw, 52px); margin: 0 0 10px; line-height: 1.05; font-weight: 800;
-    background: linear-gradient(90deg, #fff 0%, var(--accent) 60%, var(--accent2) 100%);
+    background: linear-gradient(100deg, var(--accent) 0%, #d64d9e 52%, var(--accent2) 100%);
     -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
   }
   .subtitle { color: var(--muted); font-size: 17px; max-width: 620px; margin: 0 auto 8px; }
-  .disclaimer { color: #7f84ad; font-size: 13px; max-width: 640px; margin: 14px auto 0; }
+  .disclaimer { color: #ab8a96; font-size: 13px; max-width: 640px; margin: 14px auto 0; }
 
   .card {
     background: linear-gradient(180deg, var(--card) 0%, var(--bg2) 100%);
@@ -54,24 +54,24 @@
   .field { display: flex; flex-direction: column; gap: 7px; }
   .field.full { grid-column: 1 / -1; }
   label { font-size: 13px; color: var(--muted); font-weight: 600; letter-spacing: .3px; }
-  .hint { font-size: 12px; color: #7f84ad; font-weight: 400; }
+  .hint { font-size: 12px; color: #ab8a96; font-weight: 400; }
   select, input[type="number"], input[type="text"] {
-    background: #14152b; border: 1px solid var(--line); color: var(--text);
+    background: #f6e0ea; border: 1px solid var(--line); color: var(--text);
     border-radius: 12px; padding: 12px 14px; font-size: 15px; outline: none; width: 100%;
     transition: border-color .15s, box-shadow .15s;
   }
-  select:focus, input:focus { border-color: var(--accent2); box-shadow: 0 0 0 3px rgba(124,92,255,.2); }
+  select:focus, input:focus { border-color: var(--accent2); box-shadow: 0 0 0 3px rgba(178,95,214,.2); }
 
   .seg { display: flex; gap: 8px; flex-wrap: wrap; }
   .seg button {
-    flex: 1; min-width: 80px; background: #14152b; border: 1px solid var(--line); color: var(--muted);
+    flex: 1; min-width: 80px; background: #f6e0ea; border: 1px solid var(--line); color: var(--muted);
     padding: 11px 10px; border-radius: 12px; cursor: pointer; font-size: 14px; font-weight: 600;
     transition: all .15s;
   }
   .seg button.active {
     color: #fff; border-color: transparent;
     background: linear-gradient(90deg, var(--accent2), var(--accent));
-    box-shadow: 0 6px 18px rgba(124,92,255,.35);
+    box-shadow: 0 6px 18px rgba(178,95,214,.35);
   }
 
   .slider-row { display: flex; align-items: center; gap: 14px; }
@@ -88,9 +88,9 @@
     display: block; width: 100%; margin-top: 28px; padding: 17px; font-size: 18px; font-weight: 800;
     color: #fff; border: none; border-radius: 14px; cursor: pointer; letter-spacing: .5px;
     background: linear-gradient(90deg, var(--accent2), var(--accent));
-    box-shadow: 0 12px 30px rgba(255,92,138,.35); transition: transform .1s, box-shadow .2s;
+    box-shadow: 0 12px 30px rgba(236,76,134,.35); transition: transform .1s, box-shadow .2s;
   }
-  .cta:hover { transform: translateY(-2px); box-shadow: 0 16px 40px rgba(255,92,138,.45); }
+  .cta:hover { transform: translateY(-2px); box-shadow: 0 16px 40px rgba(236,76,134,.45); }
   .cta:active { transform: translateY(0); }
 
   /* Results */
@@ -105,83 +105,83 @@
   .pct-label { color: var(--muted); font-size: 17px; margin-top: 2px; }
   .tier-desc { color: var(--text); font-size: 16px; max-width: 520px; margin: 14px auto 0; }
   .persona { color: var(--muted); font-size: 14.5px; margin: 12px auto 0; max-width: 520px; }
-  .persona b { color: #c9c4ff; }
+  .persona b { color: #9a4fd0; }
 
   .curve-wrap { margin: 24px 0 8px; }
   .breakdown { margin-top: 18px; display: flex; flex-direction: column; gap: 12px; }
   .bar-row { display: grid; grid-template-columns: 130px 1fr 48px; align-items: center; gap: 12px; }
   .bar-label { font-size: 13px; color: var(--muted); font-weight: 600; }
-  .bar-track { height: 12px; background: #14152b; border-radius: 999px; overflow: hidden; position: relative; }
-  .bar-track .mid { position: absolute; left: 50%; top: -3px; bottom: -3px; width: 1px; background: #454a78; }
+  .bar-track { height: 12px; background: #f6e0ea; border-radius: 999px; overflow: hidden; position: relative; }
+  .bar-track .mid { position: absolute; left: 50%; top: -3px; bottom: -3px; width: 1px; background: #e6b8ca; }
   .bar-fill { height: 100%; border-radius: 999px; transition: width .6s ease; }
   .bar-val { font-size: 13px; font-weight: 700; text-align: right; font-variant-numeric: tabular-nums; }
 
   details { margin-top: 24px; border-top: 1px solid var(--line); padding-top: 16px; }
   summary { cursor: pointer; color: var(--muted); font-weight: 600; font-size: 14px; }
-  details p, details li { color: #8f94bd; font-size: 13.5px; }
-  .foot { text-align: center; color: #6a6f96; font-size: 12.5px; margin-top: 34px; }
-  .pill-note { background: rgba(124,92,255,.1); border: 1px solid rgba(124,92,255,.3); color: #c9c4ff;
+  details p, details li { color: #a8899a; font-size: 13.5px; }
+  .foot { text-align: center; color: #a8899a; font-size: 12.5px; margin-top: 34px; }
+  .pill-note { background: rgba(178,95,214,.1); border: 1px solid rgba(178,95,214,.3); color: #9a4fd0;
     border-radius: 12px; padding: 12px 16px; font-size: 13px; margin-top: 16px; }
   .scene-pic { display:flex; flex-direction:column; gap:5px; margin:12px 0 10px; }
   .scene-row { display:flex; align-items:center; gap:10px; }
   .scene-row .lbl { width:96px; text-align:right; font-size:11.5px; color:var(--muted); flex-shrink:0; }
   .scene-row .icons { font-size:19px; line-height:1.25; word-break:break-all; }
   .scene-cap { font-size:13.5px; color:var(--text); }
-  .scene-move { margin-top:11px; padding-top:10px; border-top:1px solid rgba(124,92,255,.25); font-size:13px; color:#b9b4e6; }
-  .scene-move b { color:#fff; }
+  .scene-move { margin-top:11px; padding-top:10px; border-top:1px solid rgba(178,95,214,.25); font-size:13px; color:#7a5868; }
+  .scene-move b { color:var(--text); }
   .lm-tiles { display:grid; grid-template-columns:repeat(4,1fr); gap:9px; margin:13px 0 4px; }
   @media (max-width:600px){ .lm-tiles{ grid-template-columns:repeat(2,1fr); } }
-  .lm-tile { background:#14152b; border:1px solid var(--line); border-radius:11px; padding:9px 11px; }
+  .lm-tile { background:#f6e0ea; border:1px solid var(--line); border-radius:11px; padding:9px 11px; }
   .lm-tile .k { font-size:10px; text-transform:uppercase; letter-spacing:.8px; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .lm-tile .v { font-size:20px; font-weight:800; color:#fff; line-height:1.05; margin:3px 0 2px; font-variant-numeric:tabular-nums; }
-  .lm-tile .s { font-size:10.5px; color:#8f94bd; line-height:1.25; }
+  .lm-tile .v { font-size:20px; font-weight:800; color:var(--text); line-height:1.05; margin:3px 0 2px; font-variant-numeric:tabular-nums; }
+  .lm-tile .s { font-size:10.5px; color:#a8899a; line-height:1.25; }
   .lm-sub { font-size:11px; color:var(--muted); margin:12px 0 2px; }
   .lm-spark { display:block; margin:2px 0 6px; }
   .lm-comp { margin:8px 0 2px; }
   .lm-comp .bar { display:flex; height:22px; border-radius:6px; overflow:hidden; gap:2px; }
-  .lm-comp .seg { display:flex; align-items:center; justify-content:center; font-size:10.5px; font-weight:700; color:#fff; min-width:0; }
+  .lm-comp .seg { display:flex; align-items:center; justify-content:center; font-size:10.5px; font-weight:700; color:#5a2f42; min-width:0; }
   .lm-comp .cap { font-size:11.5px; color:var(--muted); margin-top:6px; }
   .lm-comp .seg { cursor:default; transition:filter .12s; }
   .lm-comp .seg:hover { filter:brightness(1.18); }
   #lm-tip { position:fixed; z-index:9999; pointer-events:none; opacity:0; transition:opacity .12s;
-    background:#0e0f22; border:1px solid var(--line); color:var(--text); font-size:12px; line-height:1.45;
-    padding:7px 10px; border-radius:9px; max-width:240px; box-shadow:0 10px 30px rgba(0,0,0,.55); }
+    background:#43273a; border:1px solid rgba(255,255,255,.14); color:#fdeef4; font-size:12px; line-height:1.45;
+    padding:7px 10px; border-radius:9px; max-width:240px; box-shadow:0 10px 30px rgba(120,40,80,.35); }
   #lm-tip b { color:#fff; }
   .lm-help { cursor:help; text-decoration:underline dotted; text-underline-offset:2px; }
-  .matches { margin-top:16px; background:rgba(255,92,138,.07); border:1px solid rgba(255,92,138,.28); border-radius:14px; padding:14px 16px; }
-  .matches-h { font-size:13px; font-weight:700; color:#ffb3c9; margin-bottom:10px; }
+  .matches { margin-top:16px; background:rgba(236,76,134,.07); border:1px solid rgba(236,76,134,.28); border-radius:14px; padding:14px 16px; }
+  .matches-h { font-size:13px; font-weight:700; color:#d6437e; margin-bottom:10px; }
   .match-row { display:grid; grid-template-columns:1fr 110px; align-items:center; gap:12px; margin:8px 0; font-size:13.5px; color:var(--text); }
-  .match-row .mbar { height:8px; background:#14152b; border-radius:99px; overflow:hidden; }
+  .match-row .mbar { height:8px; background:#f6e0ea; border-radius:99px; overflow:hidden; }
   .match-row .mbar i { display:block; height:100%; border-radius:99px; background:linear-gradient(90deg,var(--accent2),var(--accent)); transition:width .6s ease; }
-  .matches-sum { font-size:13px; color:var(--muted); margin-top:10px; padding-top:9px; border-top:1px solid rgba(255,92,138,.2); }
+  .matches-sum { font-size:13px; color:var(--muted); margin-top:10px; padding-top:9px; border-top:1px solid rgba(236,76,134,.2); }
   .match-row { cursor:default; }
   .hm-lab { font-size:11px; color:var(--muted); margin:12px 0 5px; }
   .hm { display:grid; grid-template-columns:auto repeat(3,1fr); gap:3px; max-width:340px; }
   .hm-col { font-size:10px; color:var(--muted); text-align:center; text-transform:uppercase; letter-spacing:.5px; align-self:end; padding-bottom:2px; }
   .hm-row { font-size:10.5px; color:var(--muted); display:flex; align-items:center; justify-content:flex-end; padding-right:7px; white-space:nowrap; }
   .hm-cell { height:24px; border-radius:4px; cursor:default; transition:filter .12s; }
-  .hm-cell:hover { filter:brightness(1.3); outline:1.5px solid rgba(255,255,255,.55); }
+  .hm-cell:hover { filter:brightness(1.08); outline:1.5px solid rgba(74,43,57,.55); }
   .share-row { display:flex; gap:10px; margin-top: 20px; flex-wrap: wrap; }
-  .share-row button { flex:1; min-width: 140px; background:#14152b; border:1px solid var(--line); color:var(--text);
+  .share-row button { flex:1; min-width: 140px; background:#f6e0ea; border:1px solid var(--line); color:var(--text);
     padding: 12px; border-radius: 12px; cursor:pointer; font-weight:600; font-size:14px; }
   .share-row button:hover { border-color: var(--accent2); }
 
-  .levers { margin-top:18px; background:rgba(53,208,165,.08); border:1px solid rgba(53,208,165,.28); border-radius:14px; padding:14px 16px; }
+  .levers { margin-top:18px; background:rgba(23,181,138,.10); border:1px solid rgba(23,181,138,.32); border-radius:14px; padding:14px 16px; }
   .levers h4 { margin:0 0 8px; font-size:12px; text-transform:uppercase; letter-spacing:1.5px; color:var(--good); }
   .lever { display:flex; align-items:baseline; gap:9px; font-size:14.5px; color:var(--text); margin:7px 0; }
   .lever .g { color:var(--good); font-weight:800; font-variant-numeric:tabular-nums; white-space:nowrap; }
-  .lever b { color:#fff; }
+  .lever b { color:var(--text); }
 
   .compare { margin-top:20px; display:none; }
   .compare.show { display:block; animation: rise .35s ease; }
   .compare-cols { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
-  .cmp-card { background:#14152b; border:1px solid var(--line); border-radius:14px; padding:14px 15px; }
-  .cmp-card.placeholder { display:flex; align-items:center; justify-content:center; text-align:center; color:#6a6f96; font-size:13px; border-style:dashed; }
+  .cmp-card { background:#f6e0ea; border:1px solid var(--line); border-radius:14px; padding:14px 15px; }
+  .cmp-card.placeholder { display:flex; align-items:center; justify-content:center; text-align:center; color:#a8899a; font-size:13px; border-style:dashed; }
   .cmp-card h5 { margin:0 0 3px; font-size:12.5px; color:var(--muted); font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .cmp-pct { font-size:30px; font-weight:900; line-height:1.1; margin-bottom:8px;
     background:linear-gradient(90deg,var(--accent),var(--accent2)); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; }
   .cmp-row { display:grid; grid-template-columns:64px 1fr 24px; gap:7px; align-items:center; font-size:11px; color:var(--muted); margin-top:4px; }
-  .cmp-row .t { height:7px; background:#0e0f22; border-radius:99px; overflow:hidden; }
+  .cmp-row .t { height:7px; background:#f0d5e0; border-radius:99px; overflow:hidden; }
   .cmp-row .t > div { height:100%; border-radius:99px; }
 </style>
 </head>
@@ -462,7 +462,7 @@
     <div class="compare" id="compare">
       <div class="section-title" style="margin-top:10px">Head-to-head</div>
       <div class="compare-cols" id="compare-cols"></div>
-      <button id="clear-compare" style="margin-top:12px;background:none;border:none;color:#7f84ad;cursor:pointer;font-size:13px;text-decoration:underline">clear comparison</button>
+      <button id="clear-compare" style="margin-top:12px;background:none;border:none;color:#ab8a96;cursor:pointer;font-size:13px;text-decoration:underline">clear comparison</button>
     </div>
 
     <details>
@@ -470,7 +470,7 @@
       <p>Each attribute is turned into a 0–100 sub-score using reference distributions (e.g. U.S. income percentiles, adult height distributions, occupational-prestige scales). Those sub-scores are combined with weights that reflect <em>average</em> revealed preferences of the gender you're trying to attract — drawn from mate-preference research (online-dating and speed-dating studies, cross-cultural surveys, and large-scale "pursuit curve" analyses).</p>
       <p>The weighted score is mapped through a normal distribution so that a perfectly average person lands near the 50th percentile, then nudged by a <b>market adjustment</b>. It's a heuristic, not destiny. People are not spreadsheets. 💛</p>
       <p>For <b>US cities</b>, that market adjustment is not a hand-set rule — it's a <b>Choo &amp; Siow (2006) marriage-matching model estimated on real ACS 2023 microdata</b> (163k married couples). We type people into socioeconomic-desirability deciles (income + education), recover the gains-to-marriage surface from the matching counts, then <em>re-solve the market-clearing equilibrium</em> under your city's sex ratio — so the shift reflects genuine equilibrium spillovers, not a flat penalty. (International cities still use the simpler sex-ratio model.)</p>
-      <p style="font-size:12.5px;color:#787da6;margin-top:12px"><b>Key sources for the weights &amp; curves:</b> Hitsch, Hortaçsu &amp; Ariely (2010), <i>What Makes You Click? Mate Preferences in Online Dating</i> — income/status asymmetry; Bruch &amp; Newman (2018), <i>Science Advances</i> — age-desirability "pursuit" curves; Buss (1989), 37-culture mate-preference study — kindness/ambition ranking; Fisman, Iyengar et al. (2006) speed-dating experiments; U.S. Census/ASEC income &amp; educational-attainment percentiles. <b>Choo &amp; Siow (2006)</b>, <i>Who Marries Whom and Why</i>, JPE — the marriage-market equilibrium used for US cities, estimated on <b>ACS 2023 1-year PUMS</b>. Weights reflect <i>average</i> revealed preferences and are deliberately approximate.</p>
+      <p style="font-size:12.5px;color:#ab8a96;margin-top:12px"><b>Key sources for the weights &amp; curves:</b> Hitsch, Hortaçsu &amp; Ariely (2010), <i>What Makes You Click? Mate Preferences in Online Dating</i> — income/status asymmetry; Bruch &amp; Newman (2018), <i>Science Advances</i> — age-desirability "pursuit" curves; Buss (1989), 37-culture mate-preference study — kindness/ambition ranking; Fisman, Iyengar et al. (2006) speed-dating experiments; U.S. Census/ASEC income &amp; educational-attainment percentiles. <b>Choo &amp; Siow (2006)</b>, <i>Who Marries Whom and Why</i>, JPE — the marriage-market equilibrium used for US cities, estimated on <b>ACS 2023 1-year PUMS</b>. Weights reflect <i>average</i> revealed preferences and are deliberately approximate.</p>
     </details>
   </div>
 
@@ -673,7 +673,7 @@ function renderMatches(f, r){
   const vs=vals.map(x=>x.v), vmin=Math.min(...vs), byType={};   // vmax (=top[0].v) already declared above
   vals.forEach(x=>byType[x.k]=x);
   const lerp=(a,b,tt)=>Math.round(a+(b-a)*tt);
-  const heat=(v)=>{ const tt=(v-vmin)/((vmax-vmin)||1); return 'rgb('+lerp(38,255,tt)+','+lerp(26,92,tt)+','+lerp(54,138,tt)+')'; };
+  const heat=(v)=>{ const tt=(v-vmin)/((vmax-vmin)||1); return 'rgb('+lerp(250,214,tt)+','+lerp(224,58,tt)+','+lerp(236,120,tt)+')'; };
   let hm='<div class="hm"><div class="hm-corner"></div>';
   for(let s=0;s<NS;s++) hm+='<div class="hm-col">'+tierName[s]+'</div>';
   for(let b=0;b<NB;b++){
@@ -783,26 +783,26 @@ function ratioSparkline(ratios, band){
   const y100=Y(100).toFixed(1), ux=X(band).toFixed(1), uy=Y(ratios[band]).toFixed(1);
   const sp=(W-2*pad)/(n-1); let dots='', hits='';
   ratios.forEach((r,i)=>{
-    if(i!==band) dots+='<circle cx="'+X(i).toFixed(1)+'" cy="'+Y(r).toFixed(1)+'" r="2.6" fill="#c9c4ff"/>';
+    if(i!==band) dots+='<circle cx="'+X(i).toFixed(1)+'" cy="'+Y(r).toFixed(1)+'" r="2.6" fill="#9a4fd0"/>';
     const ab=CS.age_bands[i];
     const tip='<b>Ages '+ab[0]+'–'+ab[1]+'</b><br>'+Math.round(r)+' single men per 100 single women'+(i===band?' &nbsp;·&nbsp; your bracket':'');
     hits+='<rect x="'+Math.max(0,X(i)-sp/2).toFixed(1)+'" y="0" width="'+sp.toFixed(1)+'" height="'+H+'" fill="transparent" pointer-events="all" data-tip="'+tip+'"/>';
   });
   return '<svg class="lm-spark" viewBox="0 0 '+W+' '+H+'" width="100%" preserveAspectRatio="xMidYMid meet">'
-    +'<defs><linearGradient id="spk" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#7c5cff" stop-opacity=".4"/><stop offset="1" stop-color="#7c5cff" stop-opacity="0"/></linearGradient></defs>'
-    +'<line x1="'+pad+'" y1="'+y100+'" x2="'+(W-pad)+'" y2="'+y100+'" stroke="#565b85" stroke-width="1" stroke-dasharray="4 4"/>'
-    +'<text x="'+(W-pad)+'" y="'+(+y100-4)+'" fill="#6a6f96" font-size="10" text-anchor="end">even</text>'
-    +'<path d="'+area+'" fill="url(#spk)"/><path d="'+line+'" fill="none" stroke="#c9c4ff" stroke-width="2"/>'
+    +'<defs><linearGradient id="spk" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#b25fd6" stop-opacity=".4"/><stop offset="1" stop-color="#b25fd6" stop-opacity="0"/></linearGradient></defs>'
+    +'<line x1="'+pad+'" y1="'+y100+'" x2="'+(W-pad)+'" y2="'+y100+'" stroke="#a8899a" stroke-width="1" stroke-dasharray="4 4"/>'
+    +'<text x="'+(W-pad)+'" y="'+(+y100-4)+'" fill="#a8899a" font-size="10" text-anchor="end">even</text>'
+    +'<path d="'+area+'" fill="url(#spk)"/><path d="'+line+'" fill="none" stroke="#9a4fd0" stroke-width="2"/>'
     + dots
-    +'<circle cx="'+ux+'" cy="'+uy+'" r="4.5" fill="#ff5c8a" stroke="#fff" stroke-width="1.5"/>'
-    +'<text x="'+ux+'" y="'+(+uy-9)+'" fill="#ff8fb0" font-size="10" font-weight="700" text-anchor="middle">you</text>'
-    +'<text x="'+X(0)+'" y="'+(H-3)+'" fill="#6a6f96" font-size="10">age '+CS.age_bands[0][0]+'</text>'
-    +'<text x="'+(W-pad)+'" y="'+(H-3)+'" fill="#6a6f96" font-size="10" text-anchor="end">'+CS.age_bands[n-1][1]+'</text>'
+    +'<circle cx="'+ux+'" cy="'+uy+'" r="4.5" fill="#ec4c86" stroke="#fff" stroke-width="1.5"/>'
+    +'<text x="'+ux+'" y="'+(+uy-9)+'" fill="#ec4c86" font-size="10" font-weight="700" text-anchor="middle">you</text>'
+    +'<text x="'+X(0)+'" y="'+(H-3)+'" fill="#a8899a" font-size="10">age '+CS.age_bands[0][0]+'</text>'
+    +'<text x="'+(W-pad)+'" y="'+(H-3)+'" fill="#a8899a" font-size="10" text-anchor="end">'+CS.age_bands[n-1][1]+'</text>'
     + hits +'</svg>';
 }
 // sequential stacked bar: SES makeup of the single target pool (top → lower)
 function compBar(comp, targetWord){
-  const col=['#33356a','#6a5acd','#8f7aff'];   // sequential purple ramp, lower→top
+  const col=['#f4cbdd','#e58bb8','#d1568f'];   // sequential rose ramp (light→deep), lower→top
   const nm=['Lower','Middle','Top'], desc=['national bottom third','national middle third','national top third'];
   let segs='';
   for(let i=2;i>=0;i--){ if(comp[i]<=0) continue;
@@ -810,7 +810,7 @@ function compBar(comp, targetWord){
     segs+='<div class="seg" style="flex:'+comp[i]+';background:'+col[i]+'" data-tip="'+tip+'">'+(comp[i]>=12?comp[i]+'%':'')+'</div>'; }
   const help='SES = a combined income + education score. Everyone is sorted into national thirds (top / middle / lower); this bar is the mix of the single '+targetWord+' in your bracket here.';
   return '<div class="lm-comp"><div class="bar">'+segs+'</div>'
-    +'<div class="cap">Income + education tier of single '+targetWord+' your age: <b style="color:#c9c4ff">'+comp[2]+'% top</b> · '+comp[1]+'% mid · '+comp[0]+'% lower <span class="lm-help" data-tip="'+help+'">what\'s this?</span></div></div>';
+    +'<div class="cap">Income + education tier of single '+targetWord+' your age: <b style="color:#9a4fd0">'+comp[2]+'% top</b> · '+comp[1]+'% mid · '+comp[0]+'% lower <span class="lm-help" data-tip="'+help+'">what\'s this?</span></div></div>';
 }
 
 const TIERS = [
@@ -1001,17 +1001,17 @@ function drawCurve(pct){
   document.getElementById('curve').innerHTML = `
     <defs>
       <linearGradient id="fill" x1="0" x2="1">
-        <stop offset="0" stop-color="#7c5cff" stop-opacity="0.55"/>
-        <stop offset="1" stop-color="#ff5c8a" stop-opacity="0.75"/>
+        <stop offset="0" stop-color="#b25fd6" stop-opacity="0.55"/>
+        <stop offset="1" stop-color="#ec4c86" stop-opacity="0.75"/>
       </linearGradient>
     </defs>
     <path d="${area}" fill="url(#fill)"/>
-    <path d="${line}" fill="none" stroke="#c9c4ff" stroke-width="2.5"/>
-    <line x1="${mx}" y1="${my-4}" x2="${mx}" y2="${botY}" stroke="#fff" stroke-width="2" stroke-dasharray="4 4"/>
-    <circle cx="${mx}" cy="${my}" r="6" fill="#fff"/>
-    <text x="${mx}" y="${labelY}" fill="#fff" font-size="13" font-weight="700" text-anchor="${anchor}">you</text>
-    <text x="${cx(3)}" y="${botY+18}" fill="#565b85" font-size="11">less competitive</text>
-    <text x="${cx(97)}" y="${botY+18}" fill="#565b85" font-size="11" text-anchor="end">more competitive</text>`;
+    <path d="${line}" fill="none" stroke="#9a4fd0" stroke-width="2.5"/>
+    <line x1="${mx}" y1="${my-4}" x2="${mx}" y2="${botY}" stroke="#ec4c86" stroke-width="2" stroke-dasharray="4 4"/>
+    <circle cx="${mx}" cy="${my}" r="6" fill="#ec4c86" stroke="#fff" stroke-width="1.5"/>
+    <text x="${mx}" y="${labelY}" fill="#4a2b39" font-size="13" font-weight="700" text-anchor="${anchor}">you</text>
+    <text x="${cx(3)}" y="${botY+18}" fill="#a8899a" font-size="11">less competitive</text>
+    <text x="${cx(97)}" y="${botY+18}" fill="#a8899a" font-size="11" text-anchor="end">more competitive</text>`;
 }
 
 const ATTR_LABELS = {
@@ -1212,16 +1212,16 @@ function saveImage(){
   const {f,r} = LAST; const tier = tierFor(r.pct);
   const W=1080, H=1080, c=document.createElement('canvas'); c.width=W; c.height=H;
   const x=c.getContext('2d');
-  const bg=x.createLinearGradient(0,0,W,H); bg.addColorStop(0,'#231640'); bg.addColorStop(.55,'#141428'); bg.addColorStop(1,'#0f1020');
+  const bg=x.createLinearGradient(0,0,W,H); bg.addColorStop(0,'#ffe6f0'); bg.addColorStop(.55,'#fdeef4'); bg.addColorStop(1,'#f7dfe9');
   x.fillStyle=bg; x.fillRect(0,0,W,H);
   x.textAlign='center';
-  x.fillStyle='#ff8fb0'; x.font='700 30px -apple-system,Segoe UI,Roboto,sans-serif';
+  x.fillStyle='#ec4c86'; x.font='700 30px -apple-system,Segoe UI,Roboto,sans-serif';
   x.fillText(tier[1].toUpperCase(), W/2, 210);
   // big percentile with gradient
-  const tg=x.createLinearGradient(W/2-260,0,W/2+260,0); tg.addColorStop(0,'#ff5c8a'); tg.addColorStop(1,'#7c5cff');
+  const tg=x.createLinearGradient(W/2-260,0,W/2+260,0); tg.addColorStop(0,'#ec4c86'); tg.addColorStop(1,'#b25fd6');
   x.fillStyle=tg; x.font='900 200px -apple-system,Segoe UI,Roboto,sans-serif';
   x.fillText('Top '+(100-r.pct)+'%', W/2, 400);
-  x.fillStyle='#a3a8cf'; x.font='400 34px -apple-system,Segoe UI,Roboto,sans-serif';
+  x.fillStyle='#9c7885'; x.font='400 34px -apple-system,Segoe UI,Roboto,sans-serif';
   x.fillText(ordinal(r.pct)+' percentile of singles in '+shortCity(f.cityName), W/2, 470);
   // bell curve
   const L=140, R=W-140, top=560, bot=830;
@@ -1229,20 +1229,20 @@ function saveImage(){
   x.beginPath(); x.moveTo(L,bot);
   for(let v=0;v<=100;v++) x.lineTo(gx(v),gy(gyv(v)));
   x.lineTo(R,bot); x.closePath();
-  const fg=x.createLinearGradient(L,0,R,0); fg.addColorStop(0,'rgba(124,92,255,.45)'); fg.addColorStop(1,'rgba(255,92,138,.6)');
+  const fg=x.createLinearGradient(L,0,R,0); fg.addColorStop(0,'rgba(178,95,214,.5)'); fg.addColorStop(1,'rgba(236,76,134,.6)');
   x.fillStyle=fg; x.fill();
   x.beginPath(); x.moveTo(L,gy(gyv(0)));
   for(let v=0;v<=100;v++) x.lineTo(gx(v),gy(gyv(v)));
-  x.strokeStyle='#c9c4ff'; x.lineWidth=4; x.stroke();
+  x.strokeStyle='#9a4fd0'; x.lineWidth=4; x.stroke();
   const mx=gx(r.pct), my=gy(gyv(r.pct));
-  x.setLineDash([8,8]); x.beginPath(); x.moveTo(mx,my); x.lineTo(mx,bot); x.strokeStyle='#fff'; x.lineWidth=3; x.stroke(); x.setLineDash([]);
-  x.beginPath(); x.arc(mx,my,13,0,7); x.fillStyle='#fff'; x.fill();
-  x.fillStyle='#fff'; x.font='700 26px -apple-system,Segoe UI,Roboto,sans-serif';
+  x.setLineDash([8,8]); x.beginPath(); x.moveTo(mx,my); x.lineTo(mx,bot); x.strokeStyle='#ec4c86'; x.lineWidth=3; x.stroke(); x.setLineDash([]);
+  x.beginPath(); x.arc(mx,my,13,0,7); x.fillStyle='#ec4c86'; x.fill();
+  x.fillStyle='#4a2b39'; x.font='700 26px -apple-system,Segoe UI,Roboto,sans-serif';
   x.fillText('you', mx, my-26);
   // footer
-  x.fillStyle='#7f84ad'; x.font='500 30px -apple-system,Segoe UI,Roboto,sans-serif';
+  x.fillStyle='#ab8a96'; x.font='500 30px -apple-system,Segoe UI,Roboto,sans-serif';
   x.fillText("Am I hot, or just in a good market?", W/2, 960);
-  x.fillStyle='#565b85'; x.font='400 24px -apple-system,Segoe UI,Roboto,sans-serif';
+  x.fillStyle='#a8899a'; x.font='400 24px -apple-system,Segoe UI,Roboto,sans-serif';
   x.fillText('just for fun · not a judgment of anyone', W/2, 1005);
   const a=document.createElement('a'); a.href=c.toDataURL('image/png'); a.download='my-dating-percentile.png'; a.click();
 }
