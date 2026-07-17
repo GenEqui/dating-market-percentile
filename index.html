@@ -1220,40 +1220,61 @@ function renderCompare(){
 function saveImage(){
   if (!LAST) return;
   const {f,r} = LAST; const tier = tierFor(r.pct);
-  const W=1080, H=1080, c=document.createElement('canvas'); c.width=W; c.height=H;
+  const W=1080, H=1460, c=document.createElement('canvas'); c.width=W; c.height=H;
   const x=c.getContext('2d');
+  const rr=(x0,y0,w,h,rad)=>{ const q=Math.min(rad,h/2,w/2); x.beginPath(); x.moveTo(x0+q,y0);
+    x.arcTo(x0+w,y0,x0+w,y0+h,q); x.arcTo(x0+w,y0+h,x0,y0+h,q); x.arcTo(x0,y0+h,x0,y0,q); x.arcTo(x0,y0,x0+w,y0,q); x.closePath(); };
+  const F=(w,s)=>w+' '+s+'px -apple-system,Segoe UI,Roboto,sans-serif';
   const bg=x.createLinearGradient(0,0,W,H); bg.addColorStop(0,'#ffe6f0'); bg.addColorStop(.55,'#fdeef4'); bg.addColorStop(1,'#f7dfe9');
   x.fillStyle=bg; x.fillRect(0,0,W,H);
+  // --- header ---
   x.textAlign='center';
-  x.fillStyle='#ec4c86'; x.font='700 30px -apple-system,Segoe UI,Roboto,sans-serif';
-  x.fillText(tier[1].toUpperCase(), W/2, 210);
-  // big percentile with gradient
+  x.fillStyle='#ec4c86'; x.font=F('700','30'); x.fillText(tier[1].toUpperCase(), W/2, 130);
   const tg=x.createLinearGradient(W/2-260,0,W/2+260,0); tg.addColorStop(0,'#ec4c86'); tg.addColorStop(1,'#b25fd6');
-  x.fillStyle=tg; x.font='900 200px -apple-system,Segoe UI,Roboto,sans-serif';
-  x.fillText('Top '+(100-r.pct)+'%', W/2, 400);
-  x.fillStyle='#9c7885'; x.font='400 34px -apple-system,Segoe UI,Roboto,sans-serif';
-  x.fillText(ordinal(r.pct)+' percentile of singles in '+shortCity(f.cityName), W/2, 470);
-  // bell curve
-  const L=140, R=W-140, top=560, bot=830;
+  x.fillStyle=tg; x.font=F('900','155'); x.fillText('Top '+(100-r.pct)+'%', W/2, 290);
+  x.fillStyle='#9c7885'; x.font=F('400','32'); x.fillText(ordinal(r.pct)+' percentile of singles in '+shortCity(f.cityName), W/2, 345);
+  const persona = (typeof buildPersona==='function' ? buildPersona(f.life).split(' 🚩 ')[0] : '');
+  if(persona){ x.fillStyle='#b25fd6'; x.font=F('600','30'); x.fillText('“'+persona+'”', W/2, 398); }
+  // --- bell curve (compact) ---
+  const L=170, R=W-170, top=452, bot=648;
   const gx=v=>L+(v/100)*(R-L), gyv=v=>Math.exp(-Math.pow((v-50)/17,2)/2), gy=g=>bot-g*(bot-top);
-  x.beginPath(); x.moveTo(L,bot);
-  for(let v=0;v<=100;v++) x.lineTo(gx(v),gy(gyv(v)));
-  x.lineTo(R,bot); x.closePath();
+  x.beginPath(); x.moveTo(L,bot); for(let v=0;v<=100;v++) x.lineTo(gx(v),gy(gyv(v))); x.lineTo(R,bot); x.closePath();
   const fg=x.createLinearGradient(L,0,R,0); fg.addColorStop(0,'rgba(178,95,214,.5)'); fg.addColorStop(1,'rgba(236,76,134,.6)');
   x.fillStyle=fg; x.fill();
-  x.beginPath(); x.moveTo(L,gy(gyv(0)));
-  for(let v=0;v<=100;v++) x.lineTo(gx(v),gy(gyv(v)));
-  x.strokeStyle='#9a4fd0'; x.lineWidth=4; x.stroke();
+  x.beginPath(); x.moveTo(L,gy(gyv(0))); for(let v=0;v<=100;v++) x.lineTo(gx(v),gy(gyv(v))); x.strokeStyle='#9a4fd0'; x.lineWidth=4; x.stroke();
   const mx=gx(r.pct), my=gy(gyv(r.pct));
   x.setLineDash([8,8]); x.beginPath(); x.moveTo(mx,my); x.lineTo(mx,bot); x.strokeStyle='#ec4c86'; x.lineWidth=3; x.stroke(); x.setLineDash([]);
-  x.beginPath(); x.arc(mx,my,13,0,7); x.fillStyle='#ec4c86'; x.fill();
-  x.fillStyle='#4a2b39'; x.font='700 26px -apple-system,Segoe UI,Roboto,sans-serif';
-  x.fillText('you', mx, my-26);
-  // footer
-  x.fillStyle='#ab8a96'; x.font='500 30px -apple-system,Segoe UI,Roboto,sans-serif';
-  x.fillText("Am I hot, or just in a good market?", W/2, 960);
-  x.fillStyle='#a8899a'; x.font='400 24px -apple-system,Segoe UI,Roboto,sans-serif';
-  x.fillText('just for fun · not a judgment of anyone', W/2, 1005);
+  x.beginPath(); x.arc(mx,my,12,0,7); x.fillStyle='#ec4c86'; x.fill();
+  x.fillStyle='#4a2b39'; x.font=F('700','24'); x.fillText('you', mx, my-22);
+  // --- scorecard (breakdown) ---
+  x.textAlign='left'; x.fillStyle='#ec4c86'; x.font=F('700','26'); x.fillText('YOUR SCORECARD', 120, 742);
+  const order=['attractiveness','age','income','occupation','education','height','personality','lifestyle'];
+  const bx=430, bw=430, sc=r.contrib;
+  order.forEach((a,i)=>{
+    const y=788+i*52, score=Math.round(sc[a].score), col=score>=50?'#17b58a':'#e0576e';
+    x.fillStyle='#4a2b39'; x.font=F('600','26'); x.textAlign='left'; x.fillText(ATTR_LABELS[a], 120, y+6);
+    x.fillStyle='#f2d3de'; rr(bx, y-13, bw, 18, 9); x.fill();
+    x.fillStyle=col; rr(bx, y-13, Math.max(10, bw*score/100), 18, 9); x.fill();
+    x.fillStyle=col; x.font=F('700','26'); x.textAlign='right'; x.fillText(score, W-120, y+6);
+  });
+  // --- local scene ---
+  x.textAlign='center';
+  const y2=788+8*52+34;
+  x.fillStyle='#ec4c86'; x.font=F('700','26'); x.fillText('YOUR LOCAL SCENE', W/2, y2);
+  let line1, line2;
+  if(r.market && r.market.model==='choosiow'){
+    line1 = '≈ '+Math.round(r.market.localRatio)+' single men per 100 single women';
+    const sh=Math.round(r.shift), dir=sh>0?'friendlier':sh<0?'tougher':'about even';
+    line2 = shortCity(f.cityName)+', ages '+r.market.bandLabel+' — a '+dir+' market for you ('+(sh>0?'+':'')+sh+' pts)';
+  } else {
+    line1 = '≈ '+Math.round(r.ratio)+' single men per 100 single women';
+    line2 = shortCity(f.cityName)+' (estimate)';
+  }
+  x.fillStyle='#4a2b39'; x.font=F('600','30'); x.fillText(line1, W/2, y2+48);
+  x.fillStyle='#9c7885'; x.font=F('400','26'); x.fillText(line2, W/2, y2+88);
+  // --- footer ---
+  x.fillStyle='#ab8a96'; x.font=F('500','30'); x.fillText('Am I hot, or just in a good market?', W/2, H-64);
+  x.fillStyle='#a8899a'; x.font=F('400','24'); x.fillText('just for fun · not a judgment of anyone', W/2, H-28);
   // download to disk (desktop / fallback)
   const downloadBlob = (blob)=>{
     const url = URL.createObjectURL(blob);
