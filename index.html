@@ -154,6 +154,13 @@
   .match-row .mbar { height:8px; background:#14152b; border-radius:99px; overflow:hidden; }
   .match-row .mbar i { display:block; height:100%; border-radius:99px; background:linear-gradient(90deg,var(--accent2),var(--accent)); transition:width .6s ease; }
   .matches-sum { font-size:13px; color:var(--muted); margin-top:10px; padding-top:9px; border-top:1px solid rgba(255,92,138,.2); }
+  .match-row { cursor:default; }
+  .hm-lab { font-size:11px; color:var(--muted); margin:12px 0 5px; }
+  .hm { display:grid; grid-template-columns:auto repeat(3,1fr); gap:3px; max-width:340px; }
+  .hm-col { font-size:10px; color:var(--muted); text-align:center; text-transform:uppercase; letter-spacing:.5px; align-self:end; padding-bottom:2px; }
+  .hm-row { font-size:10.5px; color:var(--muted); display:flex; align-items:center; justify-content:flex-end; padding-right:7px; white-space:nowrap; }
+  .hm-cell { height:24px; border-radius:4px; cursor:default; transition:filter .12s; }
+  .hm-cell:hover { filter:brightness(1.3); outline:1.5px solid rgba(255,255,255,.55); }
   .share-row { display:flex; gap:10px; margin-top: 20px; flex-wrap: wrap; }
   .share-row button { flex:1; min-width: 140px; background:#14152b; border:1px solid var(--line); color:var(--text);
     padding: 12px; border-radius: 12px; cursor:pointer; font-weight:600; font-size:14px; }
@@ -653,20 +660,41 @@ function renderMatches(f, r){
   }
   vals.sort((a,b)=>b.v-a.v);
   const top=vals.slice(0,3), vmax=top[0].v; top.forEach(x=>x.pull=Math.exp(x.v-vmax));
-  const tierName=['lower','mid','top'], partner=male?'Women':'Men';
+  const tierName=['lower','mid','top'], sesAdj=['down-to-earth','mid-range','high-achieving'];
+  const partner=male?'Women':'Men', pw=male?'women':'men';
+  const ageDesc=(b)=>{ const d=b-band; return d<=-2?'notably younger':d===-1?'a bit younger':d===0?'around your age':d===1?'a bit older':'notably older'; };
   const rows = top.map(x=>{
-    const ageL=CS.age_bands[x.band][0]+'–'+CS.age_bands[x.band][1];
-    return '<div class="match-row"><span class="ml">'+partner+' '+ageL+', '+tierName[x.sbin]+'-tier</span>'
+    const label = sesAdj[x.sbin].charAt(0).toUpperCase()+sesAdj[x.sbin].slice(1)+' '+pw+', '+ageDesc(x.band);
+    const tip='<b>'+partner+' '+CS.age_bands[x.band][0]+'–'+CS.age_bands[x.band][1]+', '+tierName[x.sbin]+' SES tier</b><br>relative pull '+Math.round(100*x.pull)+'%';
+    return '<div class="match-row" data-tip="'+tip+'"><span class="ml">'+label+'</span>'
       +'<span class="mbar"><i style="width:'+Math.round(100*x.pull)+'%"></i></span></div>';
   }).join('');
+  // full 6x3 compatibility heatmap over ALL partner types (brighter = values you more)
+  const vs=vals.map(x=>x.v), vmin=Math.min(...vs), byType={};   // vmax (=top[0].v) already declared above
+  vals.forEach(x=>byType[x.k]=x);
+  const lerp=(a,b,tt)=>Math.round(a+(b-a)*tt);
+  const heat=(v)=>{ const tt=(v-vmin)/((vmax-vmin)||1); return 'rgb('+lerp(38,255,tt)+','+lerp(26,92,tt)+','+lerp(54,138,tt)+')'; };
+  let hm='<div class="hm"><div class="hm-corner"></div>';
+  for(let s=0;s<NS;s++) hm+='<div class="hm-col">'+tierName[s]+'</div>';
+  for(let b=0;b<NB;b++){
+    hm+='<div class="hm-row">'+CS.age_bands[b][0]+'–'+CS.age_bands[b][1]+'</div>';
+    for(let s=0;s<NS;s++){ const x=byType[b*NS+s];
+      const tip='<b>'+partner+' '+CS.age_bands[b][0]+'–'+CS.age_bands[b][1]+', '+tierName[s]+' tier</b><br>relative pull '+Math.round(100*Math.exp(x.v-vmax))+'%';
+      hm+='<div class="hm-cell" style="background:'+heat(x.v)+'" data-tip="'+tip+'"></div>';
+    }
+  }
+  hm+='</div>';
   let ws=0,ab=0,at=0; top.forEach(x=>{ws+=x.pull;ab+=x.pull*x.band;at+=x.pull*x.sbin;}); ab/=ws; at/=ws;
   const dAge=ab-band, dSes=at-sbin;
   const ageP = dAge<-0.4?'a little younger than you':dAge>0.4?'a little older than you':'around your age';
-  const sesP = dSes>0.4?', especially higher earners/degrees':dSes<-0.4?', leaning lower on income + education':', with similar backgrounds';
+  const sesP = dSes>0.4?', especially the high-achieving ones':dSes<-0.4?', across income levels':', with similar backgrounds';
   const help='From the estimated Choo–Siow gains: the partner types (age band × income-education tier) that get the biggest gain from matching with your type — i.e. who values you most. Estimated on real US census matching data.';
   el.style.display='block';
   el.innerHTML = '<div class="matches-h">💘 Who values your type most <span class="lm-help" data-tip="'+help+'">what\'s this?</span></div>'
-    + rows + '<div class="matches-sum">In short: '+(male?'women':'men')+' '+ageP+sesP+'.</div>';
+    + rows
+    + '<div class="matches-sum">In short: '+pw+' '+ageP+sesP+'.</div>'
+    + '<div class="hm-lab">Full grid — brighter = values your type more <span style="opacity:.6">(rows: their age · columns: their income + education tier)</span></div>'
+    + hm;
 }
 
 // Choo-Siow market adjustment for a US opposite-sex dater, read at the age-band level.
